@@ -1,0 +1,112 @@
+'use client';
+
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer, 
+  PieChart, 
+  Pie, 
+  Cell,
+  Legend
+} from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from 'next-intl';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+interface ChartsProps {
+  topDepartments: any[];
+  budgetByCategory: any[];
+}
+
+export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProps) {
+  const t = useTranslations('Dashboard');
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value);
+  };
+
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <Card className="col-span-4">
+        <CardHeader>
+          <CardTitle>{t('topDeptBudget')}</CardTitle>
+        </CardHeader>
+        <CardContent className="pl-2">
+          <div className="h-75 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topDepartments} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                <XAxis type="number" tickFormatter={formatCurrency} hide />
+                <YAxis 
+                  dataKey="name" 
+                  type="category" 
+                  width={150} 
+                  tick={{ fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip 
+                  formatter={(value: any) => [formatCurrency(Number(value || 0)), '']}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                />
+                <Bar dataKey="budget" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar dataKey="spent" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center mt-4 space-x-6 text-xs text-gray-500">
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-sm mr-2" />
+              {t('budget')}
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-emerald-500 rounded-sm mr-2" />
+              {t('spent')}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="col-span-3">
+        <CardHeader>
+          <CardTitle>{t('budgetByCategory')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-75 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={budgetByCategory}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {budgetByCategory.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: any) => [formatCurrency(Number(value || 0)), '']}
+                />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  role      String     @default("ADMIN")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
+}
+
+model Department {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  nameHn  String?
+  schemes Scheme[]
+}
+
+model Scheme {
+  id                                    String     @id @default(uuid())
+  scheme_code                           String     @unique @db.VarChar(13)
+  scheme_name                           String
+  total_budget_provision                Decimal    @db.Decimal(15, 2)
+  progressive_allotment                 Decimal    @db.Decimal(15, 2)
+  actual_progressive_expenditure        Decimal    @db.Decimal(15, 2)
+  pct_budget_expenditure                Decimal    @db.Decimal(5, 2)
+  pct_actual_expenditure                Decimal    @db.Decimal(5, 2)
+  provisional_expenditure_current_month Decimal    @db.Decimal(15, 2)
+  department_id                         String
+  mappings                              Mapping[]
+  department                            Department @relation(fields: [department_id], references: [id])
+}
+
+model Category {
+  id        String         @id @default(uuid())
+  name      String         @unique
+  has_parts Boolean        @default(false)
+  parts     CategoryPart[]
+  mappings  Mapping[]
+}
+
+model CategoryPart {
+  id          String    @id @default(uuid())
+  category_id String
+  part_name   String
+  category    Category  @relation(fields: [category_id], references: [id])
+  mappings    Mapping[]
+}
+
+model Mapping {
+  id          String        @id @default(uuid())
+  scheme_id   String
+  category_id String
+  part_id     String?
+  category    Category      @relation(fields: [category_id], references: [id])
+  part        CategoryPart? @relation(fields: [part_id], references: [id])
+  scheme      Scheme        @relation(fields: [scheme_id], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   Json
+  timestamp DateTime @default(now())
+  module    String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
