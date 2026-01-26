@@ -93,3 +93,66 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create department" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
+    const user = token ? await verifyAuth(token) : null;
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get('mode'); // 'all' or 'ids'
+    const idsString = searchParams.get('ids');
+    const query = searchParams.get('q') || '';
+
+    if (mode === 'all') {
+      // Delete all matching the current search query
+      const where = {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { nameHn: { contains: query, mode: 'insensitive' } } as any,
+        ],
+      };
+
+      const deleted = await prisma.department.deleteMany({ where });
+
+      // Audit Log
+      await (prisma.auditLog as any).create({
+        data: {
+          userId: user.id,
+          action: "BULK_DELETE_DEPARTMENTS",
+          module: "DEPARTMENTS",
+          details: { count: deleted.count, query },
+        },
+      });
+
+      return NextResponse.json({ count: deleted.count });
+    } else if (idsString) {
+      const ids = idsString.split(',');
+      const deleted = await prisma.department.deleteMany({
+        where: { id: { in: ids } }
+      });
+
+      // Audit Log
+      await (prisma.auditLog as any).create({
+        data: {
+          userId: user.id,
+          action: "BULK_DELETE_DEPARTMENTS",
+          module: "DEPARTMENTS",
+          details: { count: deleted.count, ids },
+        },
+      });
+
+      return NextResponse.json({ count: deleted.count });
+    }
+
+    return NextResponse.json({ error: "No IDs provided" }, { status: 400 });
+  } catch (error) {
+    console.error("Bulk delete departments error:", error);
+    return NextResponse.json({ error: "Failed to delete departments" }, { status: 500 });
+  }
+}

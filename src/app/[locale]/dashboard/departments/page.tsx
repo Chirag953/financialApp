@@ -16,7 +16,11 @@ import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye, Pencil, Tr
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel } from '@/lib/export';
-import { useGetDepartmentsQuery, useDeleteDepartmentMutation } from '@/store/services/api';
+import { 
+  useGetDepartmentsQuery, 
+  useDeleteDepartmentMutation,
+  useBulkDeleteDepartmentsMutation 
+} from '@/store/services/api';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { DepartmentDialog } from '@/components/departments/DepartmentDialog';
@@ -46,6 +50,7 @@ export default function DepartmentsPage() {
   const [deptToDelete, setDeptToDelete] = useState<Department | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isAllSelectedAcrossPages, setIsAllSelectedAcrossPages] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const limit = 25;
   const t = useTranslations('Departments');
@@ -57,12 +62,18 @@ export default function DepartmentsPage() {
   });
 
   const [deleteDepartment, { isLoading: isDeleting }] = useDeleteDepartmentMutation();
+  const [bulkDeleteDepartments, { isLoading: isBulkDeleting }] = useBulkDeleteDepartmentsMutation();
 
   const departments = data?.departments || [];
   const pagination = data?.pagination || { total: 0, totalPages: 0 };
 
   const handleSelectAll = () => {
-    if (selectedIds.length === departments.length) {
+    if (isAllSelectedAcrossPages) {
+      setIsAllSelectedAcrossPages(false);
+      setSelectedIds([]);
+    } else if (selectedIds.length === departments.length && departments.length > 0) {
+      // If already all on current page are selected, but not all across pages
+      // and user clicks header checkbox again, clear all
       setSelectedIds([]);
     } else {
       setSelectedIds(departments.map((d: Department) => d.id));
@@ -70,20 +81,30 @@ export default function DepartmentsPage() {
   };
 
   const handleSelectOne = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    if (isAllSelectedAcrossPages) {
+      // If we were in "select all across pages" mode and unselect one,
+      // we need to switch to manual mode. But we don't have all IDs.
+      // For simplicity, we'll just clear the "all across pages" flag
+      // and keep the current page's IDs except this one.
+      setIsAllSelectedAcrossPages(false);
+      setSelectedIds(departments.map((d: Department) => d.id).filter(i => i !== id));
+    } else {
+      setSelectedIds(prev => 
+        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      );
+    }
   };
 
   const handleBulkDelete = async () => {
     try {
-      // In a real app, you might have a bulk delete endpoint
-      // For now, we'll delete them one by one or as the API supports
-      for (const id of selectedIds) {
-        await deleteDepartment(id).unwrap();
+      if (isAllSelectedAcrossPages) {
+        await bulkDeleteDepartments({ mode: 'all', q: search }).unwrap();
+      } else {
+        await bulkDeleteDepartments({ ids: selectedIds }).unwrap();
       }
       toast.success(t('deleteSuccess'));
       setSelectedIds([]);
+      setIsAllSelectedAcrossPages(false);
       setIsBulkDeleteDialogOpen(false);
     } catch (error: any) {
       toast.error(error?.data?.error || t('errorDeletingDept'));
@@ -179,7 +200,7 @@ export default function DepartmentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>{t('deleteDept')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('confirmBulkDelete', { count: selectedIds.length })}
+              {t('confirmBulkDelete', { count: isAllSelectedAcrossPages ? pagination.total : selectedIds.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -187,9 +208,9 @@ export default function DepartmentsPage() {
             <AlertDialogAction 
               onClick={handleBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              disabled={isDeleting}
+              disabled={isBulkDeleting}
             >
-              {isDeleting ? t('saving') : t('delete')}
+              {isBulkDeleting ? t('saving') : t('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -200,10 +221,10 @@ export default function DepartmentsPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
-              {selectedIds.length > 0 && (
+              {(selectedIds.length > 0 || isAllSelectedAcrossPages) && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
                   <span className="text-sm text-slate-500 font-medium">
-                    {selectedIds.length} {t('selected')}
+                    {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} {t('selected')}
                   </span>
                   <Button 
                     variant="destructive" 
@@ -229,6 +250,35 @@ export default function DepartmentsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {/* Selection Banner */}
+          {!isLoading && selectedIds.length === departments.length && departments.length > 0 && pagination.total > departments.length && (
+            <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
+              {isAllSelectedAcrossPages ? (
+                <>
+                  <span>{t('allSelectedAcrossPages', { total: pagination.total })}</span>
+                  <Button 
+                    variant="link" 
+                    className="h-auto p-0 text-blue-800 font-bold" 
+                    onClick={() => { setIsAllSelectedAcrossPages(false); setSelectedIds([]); }}
+                  >
+                    {t('clearSelection')}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span>{t('selectedAllOnPage', { count: departments.length })}</span>
+                  <Button 
+                    variant="link" 
+                    className="h-auto p-0 text-blue-800 font-bold" 
+                    onClick={() => setIsAllSelectedAcrossPages(true)}
+                  >
+                    {t('selectAllAcrossPages', { total: pagination.total })}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Desktop Table View */}
           <div className="hidden md:block rounded-md border">
             <Table>
@@ -236,7 +286,7 @@ export default function DepartmentsPage() {
                 <TableRow className="bg-slate-50 dark:bg-slate-900">
                   <TableHead className="w-12">
                     <Checkbox 
-                      checked={selectedIds.length === departments.length && departments.length > 0}
+                      checked={isAllSelectedAcrossPages || (selectedIds.length === departments.length && departments.length > 0)}
                       onCheckedChange={handleSelectAll}
                       aria-label={t('selectAll')}
                     />
@@ -260,10 +310,10 @@ export default function DepartmentsPage() {
                   ))
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
-                    <TableRow key={dept.id} className={selectedIds.includes(dept.id) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}>
+                    <TableRow key={dept.id} className={(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}>
                       <TableCell>
                         <Checkbox 
-                          checked={selectedIds.includes(dept.id)}
+                          checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
                           onCheckedChange={() => handleSelectOne(dept.id)}
                           aria-label={`Select ${dept.name}`}
                         />
@@ -328,10 +378,16 @@ export default function DepartmentsPage() {
               ))
             ) : departments.length > 0 ? (
               departments.map((dept: Department, index: number) => (
-                <Card key={dept.id} className="border-slate-200 hover:border-primary/30 transition-colors">
+                <Card key={dept.id} className={`border-slate-200 hover:border-primary/30 transition-colors ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50 border-blue-200' : ''}`}>
                   <CardContent className="p-4">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-medium text-slate-400">#{(page - 1) * limit + index + 1}</span>
+                      <div className="flex items-center gap-2">
+                        <Checkbox 
+                          checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
+                          onCheckedChange={() => handleSelectOne(dept.id)}
+                        />
+                        <span className="text-xs font-medium text-slate-400">#{(page - 1) * limit + index + 1}</span>
+                      </div>
                       <div className="flex space-x-1">
                         <Link href={`/dashboard/departments/${dept.id}` as any}>
                           <Button variant="outline" size="sm" className="h-8 px-2">

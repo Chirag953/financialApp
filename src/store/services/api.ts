@@ -76,6 +76,21 @@ export const api = createApi({
       }),
       invalidatesTags: ['Department'],
     }),
+    bulkDeleteDepartments: builder.mutation<any, { ids?: string[]; mode?: 'all'; q?: string }>({
+      query: ({ ids, mode, q }) => {
+        let url = 'departments?';
+        if (mode === 'all') {
+          url += `mode=all&q=${encodeURIComponent(q || '')}`;
+        } else if (ids && ids.length > 0) {
+          url += `ids=${ids.join(',')}`;
+        }
+        return {
+          url,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: ['Department'],
+    }),
     getSchemes: builder.query<any, { q?: string; deptId?: string; page?: number; limit?: number }>({
       query: ({ q = '', deptId = '', page = 1, limit = 25 }) => 
         `schemes?q=${q}&deptId=${deptId}&page=${page}&limit=${limit}`,
@@ -104,6 +119,21 @@ export const api = createApi({
       }),
       invalidatesTags: ['Scheme'],
     }),
+    bulkDeleteSchemes: builder.mutation<any, { ids?: string[]; mode?: 'all'; q?: string; deptId?: string }>({
+      query: ({ ids, mode, q, deptId }) => {
+        let url = 'schemes?';
+        if (mode === 'all') {
+          url += `mode=all&q=${encodeURIComponent(q || '')}&deptId=${deptId || ''}`;
+        } else if (ids && ids.length > 0) {
+          url += `ids=${ids.join(',')}`;
+        }
+        return {
+          url,
+          method: 'DELETE',
+        };
+      },
+      invalidatesTags: ['Scheme'],
+    }),
     getCategories: builder.query<any, void>({
       query: () => 'categories',
       providesTags: ['Category'],
@@ -129,6 +159,21 @@ export const api = createApi({
         url: `categories/${id}`,
         method: 'DELETE',
       }),
+      invalidatesTags: ['Category'],
+    }),
+    bulkDeleteCategories: builder.mutation<any, { ids?: string[]; mode?: 'all' }>({
+      query: ({ ids, mode }) => {
+        let url = 'categories?';
+        if (mode === 'all') {
+          url += `mode=all`;
+        } else if (ids && ids.length > 0) {
+          url += `ids=${ids.join(',')}`;
+        }
+        return {
+          url,
+          method: 'DELETE',
+        };
+      },
       invalidatesTags: ['Category'],
     }),
     getMappings: builder.query<any, { schemeId: string }>({
@@ -167,14 +212,17 @@ export const {
   useAddDepartmentMutation,
   useUpdateDepartmentMutation,
   useDeleteDepartmentMutation,
+  useBulkDeleteDepartmentsMutation,
   useGetSchemesQuery,
   useAddSchemeMutation,
   useUpdateSchemeMutation,
   useDeleteSchemeMutation,
+  useBulkDeleteSchemesMutation,
   useGetCategoriesQuery,
   useAddCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useBulkDeleteCategoriesMutation,
   useGetMappingsQuery,
   useAddMappingMutation,
   useDeleteMappingMutation,

@@ -108,7 +108,12 @@
     "logoutMessage": "क्या आप वाकई सिस्टम से लॉगआउट करना चाहते हैं?",
     "selectAll": "सभी चुनें",
     "deleteSelected": "चयनित हटाएं",
-    "confirmBulkDelete": "क्या आप वाकई {count} चयनित आइटम हटाना चाहते हैं? यह कार्रवाई वापस नहीं ली जा सकती।"
+    "confirmBulkDelete": "क्या आप वाकई {count} चयनित आइटम हटाना चाहते हैं? यह कार्रवाई वापस नहीं ली जा सकती।",
+    "selected": "चयनित",
+    "selectedAllOnPage": "इस पृष्ठ के सभी {count} आइटम चयनित हैं।",
+    "selectAllAcrossPages": "सभी {total} आइटम चुनें",
+    "allSelectedAcrossPages": "सभी {total} आइटम चयनित हैं।",
+    "clearSelection": "चयन साफ करें"
   },
   "Schemes": {
     "title": "योजना प्रबंधन",

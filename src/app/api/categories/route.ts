@@ -70,3 +70,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Failed to create category" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
+    const user = token ? await verifyAuth(token) : null;
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get('mode'); // 'all' or 'ids'
+    const idsString = searchParams.get('ids');
+
+    if (mode === 'all') {
+      // Delete all categories
+      const deleted = await prisma.category.deleteMany({});
+
+      // Audit Log
+      await (prisma.auditLog as any).create({
+        data: {
+          userId: user.id,
+          action: "BULK_DELETE_CATEGORIES",
+          module: "CATEGORIES",
+          details: { count: deleted.count },
+        },
+      });
+
+      return NextResponse.json({ count: deleted.count });
+    } else if (idsString) {
+      const ids = idsString.split(',');
+      const deleted = await prisma.category.deleteMany({
+        where: { id: { in: ids } }
+      });
+
+      // Audit Log
+      await (prisma.auditLog as any).create({
+        data: {
+          userId: user.id,
+          action: "BULK_DELETE_CATEGORIES",
+          module: "CATEGORIES",
+          details: { count: deleted.count, ids },
+        },
+      });
+
+      return NextResponse.json({ count: deleted.count });
+    }
+
+    return NextResponse.json({ error: "No IDs provided" }, { status: 400 });
+  } catch (error) {
+    console.error("Bulk delete categories error:", error);
+    return NextResponse.json({ error: "Failed to delete categories" }, { status: 500 });
+  }
+}

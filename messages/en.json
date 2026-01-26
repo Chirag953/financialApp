@@ -104,7 +104,12 @@
     "logoutMessage": "Are you sure you want to logout from the system?",
     "selectAll": "Select All",
     "deleteSelected": "Delete Selected",
-    "confirmBulkDelete": "Are you sure you want to delete {count} selected items? This action cannot be undone."
+    "confirmBulkDelete": "Are you sure you want to delete {count} selected items? This action cannot be undone.",
+    "selected": "selected",
+    "selectedAllOnPage": "All {count} items on this page are selected.",
+    "selectAllAcrossPages": "Select all {total} items",
+    "allSelectedAcrossPages": "All {total} items are selected.",
+    "clearSelection": "Clear selection"
   },
   "Schemes": {
     "title": "Schemes Management",

@@ -14,7 +14,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tags, Plus, Check, X, Layers, Pencil, Trash2, Image as ImageIcon, CheckSquare, Square } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGetCategoriesQuery, useDeleteCategoryMutation } from '@/store/services/api';
+import { 
+  useGetCategoriesQuery, 
+  useDeleteCategoryMutation,
+  useBulkDeleteCategoriesMutation
+} from '@/store/services/api';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from 'next-intl';
 import { CategoryDialog } from '@/components/categories/CategoryDialog';
@@ -56,6 +60,7 @@ export default function CategoriesPage() {
 
   const { data: categories, isLoading } = useGetCategoriesQuery();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
+  const [bulkDeleteCategories, { isLoading: isBulkDeleting }] = useBulkDeleteCategoriesMutation();
 
   const handleSelectAll = () => {
     if (selectedIds.length === categories?.length) {
@@ -73,9 +78,7 @@ export default function CategoriesPage() {
 
   const handleBulkDelete = async () => {
     try {
-      for (const id of selectedIds) {
-        await deleteCategory(id).unwrap();
-      }
+      await bulkDeleteCategories({ ids: selectedIds }).unwrap();
       toast.success(t('deleteSuccess') || 'Categories deleted successfully');
       setSelectedIds([]);
       setIsBulkDeleteDialogOpen(false);
@@ -203,9 +206,9 @@ export default function CategoriesPage() {
             <AlertDialogAction 
               onClick={handleBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              disabled={isDeleting}
+              disabled={isBulkDeleting}
             >
-              {isDeleting ? tDept('saving') : tDept('delete')}
+              {isBulkDeleting ? tDept('saving') : tDept('delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
