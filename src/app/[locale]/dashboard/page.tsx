@@ -66,8 +66,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-        <p className="text-gray-500">{t('welcome')}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400">{t('welcome')}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -91,7 +91,7 @@ export default function DashboardPage() {
                 <CardTitle className="text-sm font-medium">
                   {getStatTranslationKey(stat.name) ? t(getStatTranslationKey(stat.name)) : stat.name}
                 </CardTitle>
-                <div className="p-2 bg-slate-50 rounded-lg">
+                <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   {getIcon(stat.name)}
                 </div>
               </CardHeader>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm text-gray-500">{t('overallExpenditure')}</p>
                     <p className="text-2xl font-bold text-primary">
-                      {budgetOverview?.percentage.toFixed(1)}%
+                      {(Number(budgetOverview?.percentage) || 0).toFixed(1)}%
                     </p>
                   </div>
                   <div className="text-right text-sm">

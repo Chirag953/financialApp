@@ -45,13 +45,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 relative overflow-hidden">
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
       {/* Decorative background elements */}
       <div className="absolute top-0 left-0 w-full h-1 bg-primary/10" />
       <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       
-      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary relative z-10">
+      <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary dark:border-slate-800 relative z-10">
         <CardHeader className="space-y-4 pb-8">
           <div className="flex justify-center">
             <div className="p-3 bg-primary/10 rounded-2xl">
@@ -59,10 +59,10 @@ export default function LoginPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center tracking-tight">
+            <CardTitle className="text-2xl font-bold text-center tracking-tight dark:text-white">
               {t('title')}
             </CardTitle>
-            <CardDescription className="text-center text-gray-500">
+            <CardDescription className="text-center text-gray-500 dark:text-gray-400">
               {t('subtitle')}
             </CardDescription>
           </div>
@@ -70,13 +70,13 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="p-3 text-sm font-medium text-red-500 bg-red-50 border border-red-200 rounded-lg flex items-center">
+              <div className="p-3 text-sm font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center">
                 <AlertCircle className="w-4 h-4 mr-2 shrink-0" />
                 {error}
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
+              <Label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                 {t('email')}
               </Label>
               <div className="relative">
@@ -85,7 +85,7 @@ export default function LoginPage() {
                   id="email" 
                   type="email" 
                   placeholder="admin@example.com" 
-                  className="pl-10 h-10 border-gray-200 focus:border-primary focus:ring-primary/20"
+                  className="pl-10 h-10 border-gray-200 dark:border-slate-700 dark:bg-slate-900 focus:border-primary focus:ring-primary/20"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required 
@@ -93,19 +93,19 @@ export default function LoginPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t('password')}</Label>
+              <Label htmlFor="password" className="dark:text-gray-300">{t('password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                 <Input 
                   id="password" 
-                  type="password" 
-                  className="pl-10 h-10 border-gray-200 focus:border-primary focus:ring-primary/20"
+                  type="password"
+                  className="pl-10 h-10 border-gray-200 dark:border-slate-700 dark:bg-slate-900 focus:border-primary focus:ring-primary/20"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required 
                 />
               </div>
-            </div>
+            </div> 
             <Button type="submit" className="w-full h-11 text-base font-semibold transition-all hover:shadow-lg active:scale-[0.98]" disabled={loading}>
               {loading ? (
                 <span className="flex items-center">
@@ -116,9 +116,9 @@ export default function LoginPage() {
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex flex-col space-y-4 pt-2 pb-8 border-t border-gray-50 bg-gray-50/50 rounded-b-xl">
-          <div className="text-xs text-center text-gray-500 font-medium">
-            <span className="bg-white px-2 py-1 rounded border border-gray-100 shadow-sm mr-2">
+        <CardFooter className="flex flex-col space-y-4 pt-2 pb-8 border-t border-gray-50 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 rounded-b-xl">
+          <div className="text-xs text-center text-gray-500 dark:text-gray-400 font-medium">
+            <span className="bg-white dark:bg-slate-800 px-2 py-1 rounded border border-gray-100 dark:border-slate-700 shadow-sm mr-2">
               {t('defaultAdmin')}
             </span>
             <code className="text-primary font-bold">admin@example.com / admin123</code>

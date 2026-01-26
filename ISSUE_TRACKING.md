@@ -16,6 +16,7 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Dashboard Visualization (PRD 3.2)**: Added interactive Bar and Pie charts using `recharts` for budget vs expenditure analysis by department and category.
 - **Bilingual Support (PRD 2.22, 7.172, 9.282)**: Full localization for Hindi/English across all modules (Dashboard, Departments, Schemes, Categories, Mappings, Audit Logs, Login).
 - **System Settings (PRD 4.75)**: Global configuration for fiscal year selection, system-wide constants, and maintenance mode. Fully implemented with localized system names and integrated into audit logs.
+- **Enhanced Dashboard UI (PRD 7.187)**: Added a stylish, responsive footer with glassmorphism effects, multi-column layout, and localized branding.
 - **Mobile UI Optimization (PRD 7.169)**: Implemented responsive "Stacked Card View" for all major data tables (Schemes, Departments, Audit Logs, Categories) to ensure usability on mobile devices.
 - **Recent Refinements**: Fixed stale dashboard translation keys, localized audit log action labels, and resolved fatal Turbopack errors by disabling `reactCompiler` and migrating `middleware.ts` to `proxy.ts` per Next.js 16 conventions.
 - **Code Cleanup & Bug Fixes**: 
@@ -27,6 +28,8 @@ This file tracks the implementation status of features defined in the PRD (`docs
   - Cleaned up mock data in dashboard `stats` API to use real budget sums from categories.
   - Verified and preserved obsolete files as per project requirements.
 - **Server-side Excel Export (PRD 6.158)**: Migrated Excel generation to the server for Schemes and Audit Logs modules to support high-volume data exports efficiently.
+- **Mock Data Seeding**: Populated the entire system with comprehensive mock data from `docs/mock-data.json`. Updated `prisma/seed.js` with robust relational mapping and idempotent `upsert` logic to ensure a consistent development environment.
+- **Type Safety & Error Prevention**: Implemented `Number()` wrapping and null-safety checks across all `.toFixed()` operations in the dashboard, schemes, and department views to prevent runtime `TypeError`s.
 - **Tech Stack Setup (2.0)**: Next.js 14, Tailwind, Prisma, PostgreSQL, Redux Toolkit, and RTK Query integrated.
 
 ---
@@ -65,6 +68,21 @@ This file tracks the implementation status of features defined in the PRD (`docs
   - Replaced mock budget distribution data with real real-time calculations from category mappings.
   - Maintained project integrity by preserving legacy files required for future reference.
 
+### 2026-01-26: Department Management & UI Stability
+- **Department Edit/Delete**: Implemented the ability to rename and delete departments. This included updating the API routes (`PUT`/`DELETE`), adding RTK Query mutations, and enhancing the `DepartmentDialog`.
+- **UI Components**: Installed and configured `alert-dialog` via shadcn CLI for secure delete confirmations.
+- **Notification System**: Integrated `sonner` for system-wide toast notifications. Resolved build errors by correctly importing `Toaster` in the root [layout.tsx](file:///c:/Users/Varsha Malik/OneDrive/Pictures/financialAPP/src/app/%5Blocale%5D/layout.tsx).
+- **Data Integrity**: Added a check to prevent deletion of departments that have existing schemes associated with them.
+- **Documentation**: Updated `docs/prd.md` and `ISSUE_TRACKING.md` to reflect the newly added department management and notification features.
+
+### 2026-01-26: Database Seeding & Data Integration
+- **Mock Data Seeding**: Updated `prisma/seed.js` to automatically populate the database from `docs/mock-data.json`. Implemented complex relational mapping for Users, Departments, Categories, Category Parts, and Schemes.
+- **Robust Seeding Logic**: Replaced standard `upsert` with a conditional `findFirst`/`update`/`create` pattern for Category Parts to handle unique constraint requirements in Prisma. This ensures the seeding script is idempotent and can be re-run without errors.
+- **Dashboard Integration**: Verified that the seeded mock data correctly populates the dashboard statistics and charts via the `api/dashboard/stats` endpoint, providing a fully functional demo environment.
+- **Runtime Error Fix**: Resolved a critical `TypeError` in the Schemes module where `.toFixed()` was called on potentially null/undefined budget fields. Added safety checks across all data tables.
+- **Department Detail Enhancement**: Expanded the department-wise scheme table to include all 8 strict columns (Allotment, % Actual, Prov Exp) and added missing localized translations.
+- **PRD Synchronization**: Updated `docs/prd.md` to reflect the latest system modules, data seeding strategies, and recent technical refinements.
+
 ### 2026-01-25: System Settings & UI Refinements
 - **System Settings**: Implemented system settings page with support for fiscal year configuration and system name localization. Added `Setting` model to Prisma schema and created corresponding API endpoints.
 - **Mobile UI Optimization**: Completed card-based views for Departments, Schemes, Audit Logs, and Categories for better mobile experience.
@@ -81,7 +99,16 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **User Management Implementation**: Added comprehensive User Management module with API routes and UI. Integrated with Audit Logs to track user creation, updates, and deletions.
 - **Linter Cleanup**: Resolved multiple Tailwind 4 diagnostic warnings by replacing arbitrary values with standard utility classes.
 
+### 2026-01-26: Category Management & Visual Overhaul
+- **Category Management & System-wide Refinements**: Implemented full CRUD for budget categories, added icon/photo support, and renamed "Parts" to "Sub Categories".
+- **Visual Identity Refresh**: Overhauled the entire application theme with a modern **Green-Blue Gradient** palette. Updated `globals.css` with a custom `oklch` color system and applied dynamic gradients to the dashboard sidebar, headers, and navigation elements for a professional financial aesthetic.
+- **Global Branding & UI**: Renamed the system to **"Scheme Mapping System"** globally. Improved dark theme hover visibility for better accessibility. Added a stylish, glassmorphism-style footer to the dashboard layout with full localization support.
+- **Linter & Type Safety**: Resolved critical Prisma-related linter errors in category API routes using strategic type casting and ensured full compliance with TypeScript 5 standards.
+- **Documentation**: Updated `docs/prd.md` and `ISSUE_TRACKING.md` to reflect category management enhancements and UI refinements.
+- **UI Consistency**: Integrated `AlertDialog` for category deletions and ensured action buttons are available in both desktop and mobile views.
+
 ---
 
 ## 4. BUG TRACKING / TECHNICAL DEBT
 - [x] **Client-side Form Validation**: Implemented consistent client-side validation using `react-hook-form` and `zod` for Users, Schemes, Departments, and Categories modules.
+- [x] **DOM Nesting Compliance**: Fixed hydration errors caused by invalid HTML nesting (`div` inside `p`) in the department management dialog.

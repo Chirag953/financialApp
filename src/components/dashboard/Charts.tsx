@@ -44,14 +44,40 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
         <CardContent className="pl-2">
           <div className="h-75 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={topDepartments} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+              <BarChart 
+                data={topDepartments} 
+                layout="vertical" 
+                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                barGap={2}
+              >
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis type="number" tickFormatter={formatCurrency} hide />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
-                  width={150} 
-                  tick={{ fontSize: 12 }}
+                  width={180} 
+                  tick={(props) => {
+                    const { x, y, payload } = props;
+                    const value = payload.value;
+                    const maxLength = 30;
+                    const displayName = value.length > maxLength ? value.substring(0, maxLength) + '...' : value;
+                    
+                    return (
+                      <g transform={`translate(${x},${y})`}>
+                        <title>{value}</title>
+                        <text 
+                          x={-10} 
+                          y={0} 
+                          dy={4} 
+                          textAnchor="end" 
+                          fill="currentColor" 
+                          className="text-[10px] font-medium text-slate-500 dark:text-slate-400"
+                        >
+                          {displayName}
+                        </text>
+                      </g>
+                    );
+                  }}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -59,8 +85,8 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
                   formatter={(value: any) => [formatCurrency(Number(value || 0)), '']}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
-                <Bar dataKey="budget" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
-                <Bar dataKey="spent" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+                <Bar dataKey="budget" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={12} />
+                <Bar dataKey="spent" fill="#10b981" radius={[0, 4, 4, 0]} barSize={12} />
               </BarChart>
             </ResponsiveContainer>
           </div>

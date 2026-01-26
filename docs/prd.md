@@ -38,8 +38,9 @@
 
 ### 3.3 Departments Module
 - List of 95 departments with pagination (25 rows/page).
-- **Instant Search:** Debounced search by department name.
-- Department Detail View: Shows specific schemes and budget data.
+- **Instant Search**: Debounced search by department name.
+- **Edit/Delete Support**: Authorized administrators can rename departments (English/Hindi) or delete departments (prevented if schemes are linked).
+- **Department Detail View**: Dedicated detail page showing department summary (Total Budget, Allotment, Expenditure, Utilization %) and a comprehensive table of all schemes under that department with 8-column detail.
 
 ### 3.4 Scheme Management (Strict 8 Columns)
 | Column | Description |
@@ -55,14 +56,18 @@
 
 - **Export Feature:** Download current table view as Excel/CSV.
 - **Filtering:** Multi-category filtering and debounced search.
+- **Edit/Delete Support**: Authorized administrators can rename schemes or update their budget figures. Schemes with existing category mappings are protected from deletion.
+
+---
 
 ### 3.5 Category Management
-- Built-in: Child Budget, Gender Budget (Parts A/B/C), Green Budget.
-- Admin can manage categories and toggle `has_parts` support.
+- Built-in: Child Budget, Gender Budget (Sub Categories A/B/C), Green Budget.
+- Admin can manage categories, toggle `has_parts` support (Sub Categories), and add icons/photos for visual identification.
+- **Edit/Delete Support**: Authorized administrators can rename categories or delete categories (prevented if schemes are mapped).
 
 ### 3.6 Scheme → Category Mapping
 - Map schemes to multiple categories.
-- Support for selecting "Parts" for categories like Gender Budget.
+- Support for selecting "Sub Categories" for categories like Gender Budget.
 
 ---
 
@@ -85,9 +90,24 @@ src/
 85→└── proxy.ts            # Auth & Locale protection (Next.js 16/custom)
 86→``````
 
+## 6. DATA & SEEDING
+- **Mock Data**: A comprehensive `mock-data.json` file in the `docs/` folder contains realistic data for 95 departments, budget categories, and multiple schemes per department.
+- **Seeding Script**: An idempotent `prisma/seed.js` script is provided to populate the database with mock data, ensuring a consistent development and demo environment.
+- **Data Integrity**: Relational mapping is maintained between Departments and Schemes, and between Schemes and Budget Categories/Parts.
+
 ---
 
-## 5. DATA MODEL (Prisma - Enhanced)
+## 7. RECENT REFINEMENTS (2026-01-26)
+- **Enhanced Visualization**: Department Detail view now mirrors the strict 8-column layout of the Schemes module for consistent data reporting.
+- **Notification System**: Integrated `sonner` for rich, accessible toast notifications across all administrative modules.
+- **Department Management**: Added functionality to edit (rename) and delete departments. Includes server-side validation, audit logging, and delete-protection for departments with active schemes.
+- **Scheme Management**: Implemented edit and delete functionality for schemes. Includes real-time percentage recalculation, audit logging, and delete-protection for mapped schemes.
+- **Category Management**: Enhanced category module with Edit/Delete support and custom icons/photos. Renamed "Parts" to "Sub Categories" system-wide for better clarity.
+- **Mobile-First Actions**: Added action buttons (Edit/Delete) to both desktop table and mobile card views for departments, schemes, and categories.
+
+---
+
+## 8. DATA MODEL (Prisma - Enhanced)
 ```prisma
 model Department {
   id      String   @id @default(uuid())
@@ -152,22 +172,28 @@ model AuditLog {
 - **Zod Validation:** All POST/PATCH requests validated via server-side schemas.
 - **Login:** POST `/api/auth/login` (HTTP-only cookies).
 
-### 6.2 Data Fetching (RTK Query)
+### 6.2 Data Fetching & Management (RTK Query)
 - `useGetDepartmentsQuery`: Fetch paginated departments with debounced search.
+- `useAddDepartmentMutation`: Create a new department with bilingual names.
+- `useUpdateDepartmentMutation`: Rename existing departments (PUT).
+- `useDeleteDepartmentMutation`: Remove departments without linked schemes (DELETE).
 - `useGetSchemesQuery`: Fetch schemes with multi-category filtering.
 - `useExportSchemesMutation`: Trigger server-side Excel/CSV generation.
 
 ---
 
 ## 7. UI/UX SPECIFICATION (Mobile-First Responsive)
+- **Visual Identity:** Modern **Green-Blue Gradient** theme representing stability and growth.
+- **Color System:** Utilizes `oklch` color space for consistent, high-contrast rendering across all devices.
 - **Responsive Design Strategy:** Mobile-first approach using Tailwind CSS breakpoints (`sm`, `md`, `lg`, `xl`).
 - **Layout Components:**
-  - **Sidebar (Left):** Collapsible/Hamburger menu on mobile and tablet screens.
-  - **Header (Top):** Fixed top with Search, Language Toggle, and User Profile; adapts width based on sidebar state.
-  - **Main Content:** Fluid container with padding that adjusts for screen size.
+  - **Sidebar (Left):** Features a vibrant emerald-to-blue gradient header and active states; collapsible on mobile.
+  - **Header (Top):** Clean, shadow-enhanced top bar with integrated theme and language switchers.
+  - **Main Content:** Soft emerald-tinted background with high-contrast data containers for maximum readability.
 - **Component Responsiveness:**
   - **Tables:** Implementation of "Responsive Scroll" or "Stacked Card View" for the strict 8-column scheme table on mobile devices to ensure readability.
   - **Stat Cards:** Grid layout that shifts from 1 column (mobile) to 2 columns (tablet) and 4 columns (desktop).
+  - **Footer:** A multi-column, glassmorphism-style footer with system branding, versioning, support links, and a real-time system status indicator.
   - **Forms/Modals:** Centered and full-width on mobile; fixed width/centered on larger screens.
 - **Bilingual Support:** Toggle switch in Header for Hindi/English translation.
 - **Visual Feedback:** 

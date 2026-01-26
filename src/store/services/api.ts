@@ -61,6 +61,21 @@ export const api = createApi({
       }),
       invalidatesTags: ['Department'],
     }),
+    updateDepartment: builder.mutation<any, { id: string; body: any }>({
+      query: ({ id, body }) => ({
+        url: `departments/${id}`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { id }) => ['Department', { type: 'Department', id }],
+    }),
+    deleteDepartment: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `departments/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Department'],
+    }),
     getSchemes: builder.query<any, { q?: string; deptId?: string; page?: number; limit?: number }>({
       query: ({ q = '', deptId = '', page = 1, limit = 25 }) => 
         `schemes?q=${q}&deptId=${deptId}&page=${page}&limit=${limit}`,
@@ -74,6 +89,21 @@ export const api = createApi({
       }),
       invalidatesTags: ['Scheme'],
     }),
+    updateScheme: builder.mutation<any, { id: string; body: any }>({
+      query: ({ id, body }) => ({
+        url: `schemes/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Scheme'],
+    }),
+    deleteScheme: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `schemes/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Scheme'],
+    }),
     getCategories: builder.query<any, void>({
       query: () => 'categories',
       providesTags: ['Category'],
@@ -83,6 +113,21 @@ export const api = createApi({
         url: 'categories',
         method: 'POST',
         body,
+      }),
+      invalidatesTags: ['Category'],
+    }),
+    updateCategory: builder.mutation<any, { id: string; body: any }>({
+      query: ({ id, body }) => ({
+        url: `categories/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Category'],
+    }),
+    deleteCategory: builder.mutation<any, string>({
+      query: (id) => ({
+        url: `categories/${id}`,
+        method: 'DELETE',
       }),
       invalidatesTags: ['Category'],
     }),
@@ -120,10 +165,16 @@ export const {
   useGetDepartmentsQuery, 
   useGetDepartmentByIdQuery,
   useAddDepartmentMutation,
+  useUpdateDepartmentMutation,
+  useDeleteDepartmentMutation,
   useGetSchemesQuery,
   useAddSchemeMutation,
+  useUpdateSchemeMutation,
+  useDeleteSchemeMutation,
   useGetCategoriesQuery,
   useAddCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
   useGetMappingsQuery,
   useAddMappingMutation,
   useDeleteMappingMutation,

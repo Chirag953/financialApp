@@ -61,8 +61,8 @@ export default function AuditLogsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-          <p className="text-gray-500">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <Button variant="outline" onClick={handleExport} disabled={isExporting || logs.length === 0}>
           <Download className="w-4 h-4 mr-2" />
@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
           <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-slate-50 dark:bg-slate-900">
                   <TableHead className="w-45">{t('timestamp')}</TableHead>
                   <TableHead className="w-37.5">{t('user')}</TableHead>
                   <TableHead className="w-37.5">{t('action')}</TableHead>

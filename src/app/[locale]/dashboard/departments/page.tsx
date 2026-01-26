@@ -12,13 +12,25 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel } from '@/lib/export';
-import { useGetDepartmentsQuery } from '@/store/services/api';
+import { useGetDepartmentsQuery, useDeleteDepartmentMutation } from '@/store/services/api';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { DepartmentDialog } from '@/components/departments/DepartmentDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Department {
   id: string;
@@ -30,6 +42,11 @@ export default function DepartmentsPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDept, setSelectedDept] = useState<Department | null>(null);
+  const [deptToDelete, setDeptToDelete] = useState<Department | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const limit = 25;
   const t = useTranslations('Departments');
 
@@ -39,8 +56,39 @@ export default function DepartmentsPage() {
     limit 
   });
 
+  const [deleteDepartment, { isLoading: isDeleting }] = useDeleteDepartmentMutation();
+
   const departments = data?.departments || [];
   const pagination = data?.pagination || { total: 0, totalPages: 0 };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === departments.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(departments.map((d: Department) => d.id));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      // In a real app, you might have a bulk delete endpoint
+      // For now, we'll delete them one by one or as the API supports
+      for (const id of selectedIds) {
+        await deleteDepartment(id).unwrap();
+      }
+      toast.success(t('deleteSuccess'));
+      setSelectedIds([]);
+      setIsBulkDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.error || t('errorDeletingDept'));
+    }
+  };
 
   const handleExport = () => {
     const exportData = departments.map((d: Department, i: number) => ({
@@ -56,31 +104,119 @@ export default function DepartmentsPage() {
     setPage(1); // Reset to first page on search
   };
 
+  const handleEdit = (dept: Department) => {
+    setSelectedDept(dept);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (dept: Department) => {
+    setDeptToDelete(dept);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deptToDelete) return;
+    try {
+      await deleteDepartment(deptToDelete.id).unwrap();
+      toast.success(t('deleteSuccess'));
+      setIsDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.error || t('errorDeletingDept'));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-          <p className="text-gray-500">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" className="flex items-center" onClick={handleExport} disabled={isLoading || departments.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             {t('exportExcel')}
           </Button>
-          <Button className="flex items-center" onClick={() => setIsDialogOpen(true)}>
+          <Button className="flex items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
             <Building2 className="w-4 h-4 mr-2" />
             {t('addDept')}
           </Button>
         </div>
       </div>
 
-      <DepartmentDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      <DepartmentDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        department={selectedDept}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteDept')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmDeleteDept')}
+            </AlertDialogDescription>
+            <div className="mt-2 p-3 bg-slate-50 rounded border text-slate-900 font-medium">
+              {deptToDelete?.name}
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? t('saving') : t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteDept')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmBulkDelete', { count: selectedIds.length })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? t('saving') : t('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                  <span className="text-sm text-slate-500 font-medium">
+                    {selectedIds.length} {t('selected')}
+                  </span>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => setIsBulkDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    {t('deleteSelected')}
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
@@ -97,17 +233,25 @@ export default function DepartmentsPage() {
           <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-slate-50 dark:bg-slate-900">
+                  <TableHead className="w-12">
+                    <Checkbox 
+                      checked={selectedIds.length === departments.length && departments.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      aria-label={t('selectAll')}
+                    />
+                  </TableHead>
                   <TableHead className="w-20">{t('sNo')}</TableHead>
                   <TableHead>{t('nameEn')}</TableHead>
                   <TableHead>{t('nameHn')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
+                  <TableHead className="text-right w-40">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading || isFetching ? (
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
@@ -116,25 +260,49 @@ export default function DepartmentsPage() {
                   ))
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
-                    <TableRow key={dept.id}>
+                    <TableRow key={dept.id} className={selectedIds.includes(dept.id) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.includes(dept.id)}
+                          onCheckedChange={() => handleSelectOne(dept.id)}
+                          aria-label={`Select ${dept.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium text-gray-500">{(page - 1) * limit + index + 1}</TableCell>
                       <TableCell className="font-medium">{dept.name}</TableCell>
                       <TableCell className="text-slate-600 font-hindi">{dept.nameHn}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end space-x-2">
+                        <div className="flex justify-end space-x-1">
                           <Link href={`/dashboard/departments/${dept.id}` as any}>
-                            <Button variant="ghost" size="icon" title={t('viewDetails')}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={t('viewDetails')}>
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
-                          <Button variant="ghost" size="sm">{t('edit')}</Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                            title={t('edit')}
+                            onClick={() => handleEdit(dept)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" 
+                            title={t('delete')}
+                            onClick={() => handleDeleteClick(dept)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       {t('noDepartments')}
                     </TableCell>
                   </TableRow>
@@ -175,9 +343,24 @@ export default function DepartmentsPage() {
                     </div>
                     <h3 className="font-bold text-slate-900 mb-1">{dept.name}</h3>
                     <p className="text-sm text-slate-600 font-hindi mb-4">{dept.nameHn}</p>
-                    <div className="flex justify-end border-t pt-3">
-                      <Button variant="ghost" size="sm" className="text-primary h-8">
+                    <div className="flex justify-end border-t pt-3 space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-amber-600 h-8 hover:bg-amber-50"
+                        onClick={() => handleEdit(dept)}
+                      >
+                        <Pencil className="w-3.5 h-3.5 mr-1" />
                         {t('edit')}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 h-8 hover:bg-red-50"
+                        onClick={() => handleDeleteClick(dept)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        {t('delete')}
                       </Button>
                     </div>
                   </CardContent>

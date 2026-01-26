@@ -1,84 +1,132 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
+const path = require('path');
+
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create Admin User
-  const adminEmail = 'admin@example.com';
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-  
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {
-      password: hashedPassword
-    },
-    create: {
-      email: adminEmail,
-      password: hashedPassword,
-      name: 'System Admin',
-      role: 'ADMIN',
-    },
-  });
-  console.log('Admin user created:', admin.email);
+  console.log('Starting seeding...');
 
-  // Departments List
-  const departments = [
-    "आबकारी विभाग", "आवास विभाग", "आयुष विभाग (लघु उधोग एवं निर्यात प्रोत्साहन)",
-    "ऊर्जा विभाग (खातें और अंकेक्षा)", "उधोग विभाग (खादी एवं ग्रामोद्योग)",
-    "उद्योग विभाग (हथकरघा उद्योग)", "उद्योग विभाग (भारी एवं मध्यम उद्योग)",
-    "उद्योग विभाग (वृद्धप तथा लेखन सामग्री)", "ऊर्जा विभाग", "कृषि विभाग",
-    "कृषि तथा अन्य सम्बद्ध विभाग (आधनिक एवं रेशम विकास)", "कृषि तथा अन्य सम्बद्ध विभाग (कृषि)",
-    "कृषि तथा अन्य सम्बद्ध विभाग (भूमि विकास एवं जल संसाधन)", "कृषि तथा अन्य सम्बद्ध विभाग (ग्राम्य विकास)",
-    "कृषि तथा अन्य सम्बद्ध विभाग (पशुपालन)", "कृषि तथा अन्य सम्बद्ध विभाग (एकीकृण)",
-    "कृषि तथा अन्य सम्बद्ध विभाग (पशुपालन विकास)", "कृषि तथा अन्य सम्बद्ध विभाग (मत्स्य)",
-    "कृषि तथा अन्य सम्बद्ध विभाग (सहकारिता)", "कार्मिक विभाग (प्रशिक्षण तथा अन्य व्यय)",
-    "कार्मिक विभाग (लोक सेवा आयोग)", "स्वास्थ्य तथा रसद विभाग", "खेल विभाग",
-    "ग्रन्था विकास विभाग (ग्रन्था)", "ग्रन्था विकास विभाग (ग्रन्था उद्योग)",
-    "गृह विभाग (कारागार)", "गृह विभाग (पुलिस)", "गृह विभाग (नागरिक सुरक्षा)",
-    "गृह विभाग (राजनीतिक पेंशन तथा अन्य व्यय)", "गोपन विभाग(राज्यपाल सचिवालय) निदेशालय तथा अन्य व्यय",
-    "चिकित्सा विभाग (चिकित्सा, शिक्षा एवं प्रशिक्षण)", "चिकित्सा विभाग (एलोपैथी चिकित्सा)",
-    "चिकित्सा विभाग (आयुर्वेदिक एवं यूनानी चिकित्सा)", "चिकित्सा विभाग (होम्योपैथी चिकित्सा)",
-    "चिकित्सा विभाग (परिवार कल्याण)", "चिकित्सा विभाग (सार्वजनिक स्वास्थ्य)",
-    "प्रेस प्रकाश विभाग", "नागरिक उड्डयन विभाग", "भाषा विभाग", "नियोजन विभाग",
-    "निर्वाचन विभाग", "न्याय विभाग", "परिवहन विभाग", "पर्यटन विभाग", "पर्यावरण विभाग",
-    "प्रशासनिक सुधार विभाग", "प्रारंभिक शिक्षा विभाग", "मुस्लिम वक्फ विभाग",
-    "महिला एवं बाल कल्याण विभाग", "मत्स्य विभाग (जिला प्रशासन)",
-    "राजस्व विभाग (देवी विधानियों के सम्बन्ध में राहत)", "राजस्व विभाग (राजस्व परिषद् तथा अन्य व्यय)",
-    "राष्ट्रीय एकीकरण विभाग", "लोक निर्माण विभाग (अभियांत)", "लोक निर्माण विभाग (भवन)",
-    "लोक निर्माण विभाग (विशेष क्षेत्र कार्यक्रम)", "लोक निर्माण विभाग (सचार साधन-नीती)",
-    "लोक निर्माण विभाग (सचार साधन-सड़कें)", "लोक निर्माण विभाग (राज्य सम्पत्ति निदेशालय)",
-    "वन विभाग", "वित्त विभाग (ऋण सेवा तथा अन्य व्यय)", "वित्त विभाग (अभिलेखों भत्ते तथा पेंशनें)",
-    "वित्त विभाग (कोषागार तथा लेखा प्रशासन)", "वित्त विभाग (राज्य लॉटरी)",
-    "वित्त विभाग (लेखा परीक्षा, अन्य-व्यय)", "वित्त विभाग (सामूहिक अभिनंदन)",
-    "विपत्ति परिषद् सचिवालय", "विधान सभा सचिवालय", "व्यावसायिक शिक्षा विभाग",
-    "विज्ञान एवं प्रौद्योगिकी विभाग", "उच्च शिक्षा (माध्यमिक शिक्षा)",
-    "शिक्षा विभाग (माध्यमिक शिक्षा)", "शिक्षा विभाग (उच्च शिक्षा)", "शिक्षा विभाग (नेवा राष्ट्र)",
-    "शिक्षा विभाग(राज्य शैक्षिक अनुसंधान एवं प्रशिक्षण परिषद्)", "कला विभाग (श्रम कल्याण)",
-    "श्रम विभाग (समायोजन)", "सचिवालय प्रशासन विभाग", "समाज कल्याण विभाग (विकलांग एवं वृद्धा वर्ग कल्याण)",
-    "समाज कल्याण विभाग(समाज कल्याण एवं अनुसूचित जातियों का कल्याण)", "समाज कल्याण विभाग (जनजाति कल्याण)",
-    "सतर्कता विभाग", "समाज कल्याण विभाग(अनुसूचित जातियों के लिये विशेष पठक योजना)",
-    "सामान्य प्रशासन विभाग", "सांस्कृतिक मामलात विभाग", "सूचना विभाग", "सैनिक कल्याण विभाग",
-    "संस्थागत वित्त विभाग (व्यापारकर)", "संस्थागत वित्त विभाग (मनोरंजन तथा राजोकर)",
-    "संस्थागत वित्त विभाग (स्टांप एवं पंजीकरण)", "संस्कृति विभाग",
-    "स्थानिक निकायों तथा ग्रामीण जलापूर्ति विभाग", "सिंचाई विभाग (निर्माण कार्य)",
-    "सिंचाई विभाग (अभिषेचन)", "अन्य विभाग (Misc)"
-  ];
+  // Read mock data
+  const mockDataPath = path.join(__dirname, '../docs/mock-data.json');
+  const mockData = JSON.parse(fs.readFileSync(mockDataPath, 'utf8'));
 
-  console.log('Seeding departments...');
-  for (const nameHn of departments) {
-    // Generate a simple English name/key from the Hindi name for the 'name' field
-    // Since we don't have actual English names, we'll use the Hindi name as 'name' too
-    // but ensured it's unique and trimmed.
-    const name = nameHn.trim();
-    await prisma.department.upsert({
-      where: { name },
-      update: { nameHn },
-      create: { 
-        name,
-        nameHn
+  // 1. Create Admin User
+  console.log('Seeding users...');
+  for (const user of mockData.users) {
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { password: hashedPassword },
+      create: {
+        email: user.email,
+        password: hashedPassword,
+        name: 'System Admin',
+        role: 'ADMIN',
       },
     });
   }
+
+  // 2. Seed Departments
+  console.log('Seeding departments...');
+  const departmentIdMap = new Map();
+  for (const dept of mockData.departments) {
+    const createdDept = await prisma.department.upsert({
+      where: { name: dept.name },
+      update: { nameHn: dept.name }, // Using the same name for Hindi for now as per mock data
+      create: {
+        name: dept.name,
+        nameHn: dept.name,
+      },
+    });
+    departmentIdMap.set(dept.id, createdDept.id);
+  }
+
+  // 3. Seed Categories
+  console.log('Seeding categories...');
+  const categoryIdMap = new Map();
+  for (const cat of mockData.categories) {
+    const createdCat = await prisma.category.upsert({
+      where: { name: cat.name },
+      update: { has_parts: cat.has_parts },
+      create: {
+        name: cat.name,
+        has_parts: cat.has_parts,
+      },
+    });
+    categoryIdMap.set(cat.id, createdCat.id);
+  }
+
+  // 4. Seed Category Parts
+  console.log('Seeding category parts...');
+  const partIdMap = new Map();
+  for (const part of mockData.category_parts) {
+    const categoryId = categoryIdMap.get(part.category_id);
+    if (!categoryId) continue;
+
+    const existingPart = await prisma.categoryPart.findFirst({
+      where: {
+        category_id: categoryId,
+        part_name: part.part_name,
+      },
+    });
+
+    if (existingPart) {
+      const updatedPart = await prisma.categoryPart.update({
+        where: { id: existingPart.id },
+        data: {
+          part_name: part.part_name,
+          category_id: categoryId,
+        },
+      });
+      partIdMap.set(part.id, updatedPart.id);
+    } else {
+      const createdPart = await prisma.categoryPart.create({
+        data: {
+          part_name: part.part_name,
+          category_id: categoryId,
+        },
+      });
+      partIdMap.set(part.id, createdPart.id);
+    }
+  }
+
+  // 5. Seed Schemes
+  console.log('Seeding schemes...');
+  for (const scheme of mockData.schemes) {
+    const departmentId = departmentIdMap.get(scheme.department_id);
+    if (!departmentId) {
+      console.warn(`Department ID ${scheme.department_id} not found for scheme ${scheme.scheme_code}`);
+      continue;
+    }
+
+    await prisma.scheme.upsert({
+      where: { scheme_code: scheme.scheme_code },
+      update: {
+        scheme_name: scheme.scheme_name,
+        total_budget_provision: scheme.total_budget_provision,
+        progressive_allotment: scheme.progressive_allotment,
+        actual_progressive_expenditure: scheme.actual_progressive_expenditure,
+        pct_budget_expenditure: scheme.pct_budget_expenditure,
+        pct_actual_expenditure: scheme.pct_actual_expenditure,
+        provisional_expenditure_current_month: scheme.provisional_expenditure_current_month,
+        department_id: departmentId,
+      },
+      create: {
+        scheme_code: scheme.scheme_code,
+        scheme_name: scheme.scheme_name,
+        total_budget_provision: scheme.total_budget_provision,
+        progressive_allotment: scheme.progressive_allotment,
+        actual_progressive_expenditure: scheme.actual_progressive_expenditure,
+        pct_budget_expenditure: scheme.pct_budget_expenditure,
+        pct_actual_expenditure: scheme.pct_actual_expenditure,
+        provisional_expenditure_current_month: scheme.provisional_expenditure_current_month,
+        department_id: departmentId,
+      },
+    });
+  }
+
   console.log('Seeding completed successfully!');
 }
 

@@ -12,10 +12,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel } from '@/lib/export';
-import { useGetSchemesQuery, useGetDepartmentsQuery } from '@/store/services/api';
+import { useGetSchemesQuery, useGetDepartmentsQuery, useDeleteSchemeMutation } from '@/store/services/api';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { 
@@ -26,6 +27,17 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { SchemeDialog } from '@/components/schemes/SchemeDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 interface Scheme {
   id: string;
@@ -50,6 +62,11 @@ export default function SchemesPage() {
   const [deptId, setDeptId] = useState('all');
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
+  const [schemeToDelete, setSchemeToDelete] = useState<Scheme | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const limit = 25;
 
   const { data: schemesData, isLoading, isFetching } = useGetSchemesQuery({ 
@@ -60,10 +77,38 @@ export default function SchemesPage() {
   });
 
   const { data: deptsData } = useGetDepartmentsQuery({ limit: 100 });
+  const [deleteScheme, { isLoading: isDeleting }] = useDeleteSchemeMutation();
 
   const schemes = schemesData?.schemes || [];
   const pagination = schemesData?.pagination || { total: 0, totalPages: 0 };
   const departments = deptsData?.departments || [];
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === schemes.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(schemes.map((s: Scheme) => s.id));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      for (const id of selectedIds) {
+        await deleteScheme(id).unwrap();
+      }
+      toast.success(t('deleteSuccess') || 'Schemes deleted successfully');
+      setSelectedIds([]);
+      setIsBulkDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.error || t('errorDeletingScheme') || 'Failed to delete schemes');
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -94,6 +139,27 @@ export default function SchemesPage() {
     setPage(1);
   };
 
+  const handleEdit = (scheme: Scheme) => {
+    setSelectedScheme(scheme);
+    setIsDialogOpen(true);
+  };
+
+  const handleDeleteClick = (scheme: Scheme) => {
+    setSchemeToDelete(scheme);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!schemeToDelete) return;
+    try {
+      await deleteScheme(schemeToDelete.id).unwrap();
+      toast.success(t('deleteSuccess') || 'Scheme deleted successfully');
+      setIsDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast.error(error?.data?.error || t('errorDeletingScheme') || 'Failed to delete scheme');
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -106,27 +172,94 @@ export default function SchemesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-          <p className="text-gray-500">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" className="flex-1 sm:flex-none items-center" onClick={handleExport} disabled={isLoading || schemes.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             {t('exportExcel')}
           </Button>
-          <Button className="flex items-center" onClick={() => setIsDialogOpen(true)}>
+          <Button className="flex items-center" onClick={() => { setSelectedScheme(null); setIsDialogOpen(true); }}>
             <FileText className="w-4 h-4 mr-2" />
             {t('newScheme')}
           </Button>
         </div>
       </div>
 
-      <SchemeDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} />
+      <SchemeDialog 
+        open={isDialogOpen} 
+        onOpenChange={setIsDialogOpen} 
+        scheme={selectedScheme}
+      />
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteScheme') || 'Delete Scheme'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmDeleteScheme') || 'Are you sure you want to delete this scheme? This action cannot be undone.'}
+            </AlertDialogDescription>
+            <div className="mt-2 p-3 bg-slate-50 rounded border text-slate-900 font-medium">
+              {schemeToDelete?.scheme_code} - {schemeToDelete?.scheme_name}
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? tDept('saving') : tDept('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteScheme') || 'Delete Schemes'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {tDept('confirmBulkDelete', { count: selectedIds.length })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? tDept('saving') : tDept('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                  <span className="text-sm text-slate-500 font-medium">
+                    {selectedIds.length} {tDept('selected')}
+                  </span>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="h-8"
+                    onClick={() => setIsBulkDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    {tDept('deleteSelected')}
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
@@ -163,7 +296,14 @@ export default function SchemesPage() {
           <div className="hidden lg:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-slate-50 dark:bg-slate-900">
+                  <TableHead className="w-10">
+                    <Checkbox 
+                      checked={selectedIds.length === schemes.length && schemes.length > 0}
+                      onCheckedChange={handleSelectAll}
+                      aria-label={tDept('selectAll')}
+                    />
+                  </TableHead>
                   <TableHead className="w-30">{t('code')}</TableHead>
                   <TableHead className="min-w-50">{t('name')}</TableHead>
                   <TableHead className="text-right">{t('totalBudget')}</TableHead>
@@ -172,20 +312,29 @@ export default function SchemesPage() {
                   <TableHead className="text-right">{t('pctBudget')}</TableHead>
                   <TableHead className="text-right">{t('pctActual')}</TableHead>
                   <TableHead className="text-right">{t('provExp')}</TableHead>
+                  <TableHead className="text-right">{tDept('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading || isFetching ? (
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
-                      {Array(8).fill(0).map((_, j) => (
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      {Array(9).fill(0).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
                   ))
                 ) : schemes.length > 0 ? (
                   schemes.map((scheme: Scheme) => (
-                    <TableRow key={scheme.id} className="hover:bg-slate-50">
+                    <TableRow key={scheme.id} className={`hover:bg-slate-50 ${selectedIds.includes(scheme.id) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedIds.includes(scheme.id)}
+                          onCheckedChange={() => handleSelectOne(scheme.id)}
+                          aria-label={`Select ${scheme.scheme_name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{scheme.scheme_code}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
@@ -198,27 +347,49 @@ export default function SchemesPage() {
                       <TableCell className="text-right text-xs font-bold text-blue-600">{formatCurrency(scheme.actual_progressive_expenditure)}</TableCell>
                       <TableCell className="text-right">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          scheme.pct_budget_expenditure > 90 ? 'bg-red-100 text-red-700' : 
-                          scheme.pct_budget_expenditure > 50 ? 'bg-orange-100 text-orange-700' : 
+                          (Number(scheme.pct_budget_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
+                          (Number(scheme.pct_budget_expenditure) || 0) > 50 ? 'bg-orange-100 text-orange-700' : 
                           'bg-green-100 text-green-700'
                         }`}>
-                          {scheme.pct_budget_expenditure.toFixed(1)}%
+                          {(Number(scheme.pct_budget_expenditure) || 0).toFixed(1)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                          scheme.pct_actual_expenditure > 90 ? 'bg-red-100 text-red-700' : 
+                          (Number(scheme.pct_actual_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
                           'bg-blue-100 text-blue-700'
                         }`}>
-                          {scheme.pct_actual_expenditure.toFixed(1)}%
+                          {(Number(scheme.pct_actual_expenditure) || 0).toFixed(1)}%
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-xs">{formatCurrency(scheme.provisional_expenditure_current_month)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                            title={tDept('edit')}
+                            onClick={() => handleEdit(scheme)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" 
+                            title={tDept('delete')}
+                            onClick={() => handleDeleteClick(scheme)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10 text-gray-500">
+                    <TableCell colSpan={10} className="text-center py-10 text-gray-500">
                       {t('noSchemes')}
                     </TableCell>
                   </TableRow>
@@ -231,7 +402,7 @@ export default function SchemesPage() {
           <div className="lg:hidden space-y-4">
             {isLoading || isFetching ? (
               Array(3).fill(0).map((_, i) => (
-                <div key={i} className="p-4 border rounded-lg space-y-3">
+                <div key={i} className="p-4 border dark:border-slate-800 rounded-lg space-y-3">
                   <Skeleton className="h-5 w-1/3" />
                   <Skeleton className="h-4 w-full" />
                   <div className="grid grid-cols-2 gap-4">
@@ -242,24 +413,40 @@ export default function SchemesPage() {
               ))
             ) : schemes.length > 0 ? (
               schemes.map((scheme: Scheme) => (
-                <div key={scheme.id} className="p-4 border rounded-lg space-y-3 bg-white hover:border-primary/50 transition-colors shadow-sm">
+                <div key={scheme.id} className="p-4 border dark:border-slate-800 rounded-lg space-y-3 bg-white dark:bg-slate-900 hover:border-primary/50 transition-colors shadow-sm">
                   <div className="flex justify-between items-start gap-2">
-                    <div className="font-mono text-xs font-bold px-2 py-1 bg-slate-100 rounded text-slate-600">
+                    <div className="font-mono text-xs font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">
                       {scheme.scheme_code}
                     </div>
                     <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                        onClick={() => handleEdit(scheme)}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" 
+                        onClick={() => handleDeleteClick(scheme)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                        scheme.pct_budget_expenditure > 90 ? 'bg-red-100 text-red-700' : 
-                        scheme.pct_budget_expenditure > 50 ? 'bg-orange-100 text-orange-700' : 
+                        (Number(scheme.pct_budget_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
+                        (Number(scheme.pct_budget_expenditure) || 0) > 50 ? 'bg-orange-100 text-orange-700' : 
                         'bg-green-100 text-green-700'
                       }`}>
-                        B: {scheme.pct_budget_expenditure.toFixed(1)}%
+                        B: {(Number(scheme.pct_budget_expenditure) || 0).toFixed(1)}%
                       </span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                        scheme.pct_actual_expenditure > 90 ? 'bg-red-100 text-red-700' : 
+                        (Number(scheme.pct_actual_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
                         'bg-blue-100 text-blue-700'
                       }`}>
-                        A: {scheme.pct_actual_expenditure.toFixed(1)}%
+                        A: {(Number(scheme.pct_actual_expenditure) || 0).toFixed(1)}%
                       </span>
                     </div>
                   </div>

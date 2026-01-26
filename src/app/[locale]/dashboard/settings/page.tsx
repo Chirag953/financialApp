@@ -43,8 +43,8 @@ export default function SettingsPage() {
   useEffect(() => {
     if (data?.settings) {
       setFormData({
-        systemName: data.settings.systemName || 'Grant-001 Management System',
-        systemNameHn: data.settings.systemNameHn || 'अनुदान-001 प्रबंधन प्रणाली',
+        systemName: data.settings.systemName || 'Scheme Mapping System',
+        systemNameHn: data.settings.systemNameHn || 'योजना मानचित्रण प्रणाली',
         fiscalYear: data.settings.fiscalYear || '2025-26',
         maintenanceMode: data.settings.maintenanceMode || 'false'
       });
@@ -81,14 +81,16 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-        <p className="text-gray-500">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
         {message && (
           <div className={`p-4 rounded-md flex items-center ${
-            message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+            message.type === 'success' 
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+              : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
           }`}>
             {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 mr-2" /> : <AlertCircle className="w-5 h-5 mr-2" />}
             {message.text}
