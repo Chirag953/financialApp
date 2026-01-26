@@ -72,7 +72,7 @@ export default function CategoriesPage() {
 
   const handleSelectOne = (id: string) => {
     setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i: string) => i !== id) : [...prev, id]
     );
   };
 

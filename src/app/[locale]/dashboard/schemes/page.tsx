@@ -104,10 +104,10 @@ export default function SchemesPage() {
   const handleSelectOne = (id: string) => {
     if (isAllSelectedAcrossPages) {
       setIsAllSelectedAcrossPages(false);
-      setSelectedIds(schemes.map((s: Scheme) => s.id).filter(i => i !== id));
+      setSelectedIds(schemes.map((s: Scheme) => s.id).filter((i: string) => i !== id));
     } else {
       setSelectedIds(prev => 
-        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        prev.includes(id) ? prev.filter((i: string) => i !== id) : [...prev, id]
       );
     }
   };

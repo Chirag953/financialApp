@@ -87,10 +87,10 @@ export default function DepartmentsPage() {
       // For simplicity, we'll just clear the "all across pages" flag
       // and keep the current page's IDs except this one.
       setIsAllSelectedAcrossPages(false);
-      setSelectedIds(departments.map((d: Department) => d.id).filter(i => i !== id));
+      setSelectedIds(departments.map((d: Department) => d.id).filter((i: string) => i !== id));
     } else {
       setSelectedIds(prev => 
-        prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        prev.includes(id) ? prev.filter((i: string) => i !== id) : [...prev, id]
       );
     }
   };
