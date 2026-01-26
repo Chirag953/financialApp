@@ -12,10 +12,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const settings = await (prisma as any).setting.findMany();
+    const settings = await prisma.setting.findMany();
     
     // Convert to key-value object
-    const settingsMap = settings.reduce((acc: Record<string, string>, curr: any) => {
+    const settingsMap = settings.reduce((acc: Record<string, string>, curr) => {
       acc[curr.key] = curr.value;
       return acc;
     }, {} as Record<string, string>);
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // Update or create each setting
     const updatePromises = Object.entries(settings).map(([key, value]) => 
-      (prisma as any).setting.upsert({
+      prisma.setting.upsert({
         where: { key },
         update: { value: String(value) },
         create: { key, value: String(value) },

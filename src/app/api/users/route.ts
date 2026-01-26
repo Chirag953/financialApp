@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     // Log the action
     await prisma.auditLog.create({
       data: {
-        userId: session.user.id,
+        userId: session.id,
         action: 'CREATE_USER',
         module: 'USER_MGMT',
         details: { targetEmail: email, role },

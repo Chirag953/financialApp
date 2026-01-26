@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = departmentSchema.parse(body);
 
-    const department = await (prisma.department as any).create({
+    const department = await prisma.department.create({
       data: {
         name: validatedData.name,
         nameHn: validatedData.nameHn,
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     });
 
     // Create Audit Log
-    await (prisma.auditLog as any).create({
+    await prisma.auditLog.create({
       data: {
         userId: user.id,
         action: "CREATE_DEPARTMENT",

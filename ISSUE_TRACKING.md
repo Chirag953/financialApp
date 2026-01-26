@@ -18,6 +18,14 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **System Settings (PRD 4.75)**: Global configuration for fiscal year selection, system-wide constants, and maintenance mode. Fully implemented with localized system names and integrated into audit logs.
 - **Mobile UI Optimization (PRD 7.169)**: Implemented responsive "Stacked Card View" for all major data tables (Schemes, Departments, Audit Logs, Categories) to ensure usability on mobile devices.
 - **Recent Refinements**: Fixed stale dashboard translation keys, localized audit log action labels, and resolved fatal Turbopack errors by disabling `reactCompiler` and migrating `middleware.ts` to `proxy.ts` per Next.js 16 conventions.
+- **Code Cleanup & Bug Fixes**: 
+  - Fixed `(prisma.auditLog as any)` and `(prisma.setting as any)` casts across all API routes (`settings`, `stats`, `audit-logs`, `categories`, `departments`, `schemes`, `mappings`).
+  - Fixed session type error in `users` API route by correctly accessing `session.id`.
+  - Removed unused imports and variables in `Dashboard` page.
+  - Replaced hardcoded JWT secret with environment variable in `auth.ts`.
+  - Removed debug console logs from `proxy.ts`.
+  - Cleaned up mock data in dashboard `stats` API to use real budget sums from categories.
+  - Verified and preserved obsolete files as per project requirements.
 - **Server-side Excel Export (PRD 6.158)**: Migrated Excel generation to the server for Schemes and Audit Logs modules to support high-volume data exports efficiently.
 - **Tech Stack Setup (2.0)**: Next.js 14, Tailwind, Prisma, PostgreSQL, Redux Toolkit, and RTK Query integrated.
 
@@ -49,6 +57,13 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Dashboard Visualization**: Integrated `recharts` to provide interactive data visualization. Added a Bar Chart for Top Departments (Budget vs Spent) and a Pie Chart for Budget Distribution by Category. Updated the `dashboard/stats` API to provide aggregated data for these charts.
 - **Server-side Excel Export**: Implemented server-side Excel generation for the Schemes and Audit Logs modules using the `xlsx` library. This move from client-side to server-side improves performance and ensures consistent behavior across different browsers and devices when handling large datasets.
 - **Form Validation & UI Refinement**: Refactored Users, Schemes, Departments, and Categories modules to use `react-hook-form` and `zod` for consistent client-side validation. Improved the Mappings page's mobile responsiveness and added structured Fiscal Year selection in System Settings.
+- **Comprehensive Code Cleanup**: 
+  - Audited all API routes to remove redundant `(prisma as any)` casts, improving type safety.
+  - Fixed a critical session type error in the Users management API.
+  - Secured the JWT authentication flow by moving the secret key to environment variables.
+  - Removed debug logs and unused imports across the dashboard and middleware.
+  - Replaced mock budget distribution data with real real-time calculations from category mappings.
+  - Maintained project integrity by preserving legacy files required for future reference.
 
 ### 2026-01-25: System Settings & UI Refinements
 - **System Settings**: Implemented system settings page with support for fiscal year configuration and system name localization. Added `Setting` model to Prisma schema and created corresponding API endpoints.

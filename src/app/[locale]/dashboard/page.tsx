@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, FileText, Tags, Map as MapIcon, Clock, TrendingUp, IndianRupee } from 'lucide-react';
+import { Building2, FileText, Clock, TrendingUp, IndianRupee } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetStatsQuery } from '@/store/services/api';
 import { Progress } from '@/components/ui/progress';

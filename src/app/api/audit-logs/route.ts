@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const skip = (page - 1) * limit;
 
     const [logs, total] = await Promise.all([
-      (prisma.auditLog as any).findMany({
+      prisma.auditLog.findMany({
         orderBy: { timestamp: 'desc' },
         include: { user: { select: { name: true, email: true } } },
         skip,

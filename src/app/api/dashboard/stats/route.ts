@@ -9,45 +9,49 @@ export async function GET() {
       },
     });
 
-    const categories = await prisma.category.findMany();
+    const categories = await prisma.category.findMany({
+      include: {
+        mappings: {
+          include: {
+            scheme: true
+          }
+        }
+      }
+    });
     
     const departmentCount = departments.length;
     const schemeCount = departments.reduce((sum: number, dept: any) => sum + dept.schemes.length, 0);
-    const categoryCount = categories.length;
     
-    // Calculate total budget, allotment, and expenditure
+    // Calculate total budget and expenditure
     const totalBudget = departments.reduce((sum: number, dept: any) => 
       sum + dept.schemes.reduce((dSum: number, scheme: any) => dSum + Number(scheme.total_budget_provision || 0), 0), 0);
     
-    const totalAllotment = departments.reduce((sum: number, dept: any) => 
-      sum + dept.schemes.reduce((dSum: number, scheme: any) => dSum + Number(scheme.progressive_allotment || 0), 0), 0);
-      
     const totalExpenditure = departments.reduce((sum: number, dept: any) => 
-      sum + dept.schemes.reduce((dSum: number, scheme: any) => dSum + Number(scheme.actual_progressive_expenditure_upto_month || 0), 0), 0);
-
-    // Calculate mapping progress (mock logic for now as mapping is complex)
-    const mappingProgress = 45; // 45% mapped
+      sum + dept.schemes.reduce((dSum: number, scheme: any) => dSum + Number(scheme.actual_progressive_expenditure || 0), 0), 0);
 
     // Calculate top departments by budget
     const topDepartments = departments
       .map((dept: any) => ({
         name: dept.name,
         budget: dept.schemes.reduce((sum: number, s: any) => sum + Number(s.total_budget_provision || 0), 0),
-        spent: dept.schemes.reduce((sum: number, s: any) => sum + Number(s.actual_progressive_expenditure_upto_month || 0), 0)
+        spent: dept.schemes.reduce((sum: number, s: any) => sum + Number(s.actual_progressive_expenditure || 0), 0)
       }))
       .sort((a: any, b: any) => b.budget - a.budget)
       .slice(0, 5);
 
-    // MOCK DATA for now since we don't have direct budget linkage in Prisma schema for categories yet
-    // In a real app, we would aggregate this from the database
-    const budgetByCategory = [
-      { name: 'General', value: totalBudget * 0.6 },
-      { name: 'SC/ST', value: totalBudget * 0.25 },
-      { name: 'OBC', value: totalBudget * 0.15 },
-    ];
+    // Calculate real budget by category from mappings
+    const budgetByCategory = categories.map(cat => ({
+      name: cat.name,
+      value: cat.mappings.reduce((sum, m) => sum + Number(m.scheme.total_budget_provision || 0), 0)
+    })).filter(cat => cat.value > 0);
+
+    // If no mappings exist yet, provide a fallback or empty array
+    if (budgetByCategory.length === 0) {
+      budgetByCategory.push({ name: 'Uncategorized', value: totalBudget });
+    }
 
     // Mock recent audit logs for now
-    const recentActivity = await (prisma.auditLog as any).findMany({
+    const recentActivity = await prisma.auditLog.findMany({
       take: 5,
       orderBy: { timestamp: 'desc' },
       include: { user: { select: { name: true } } }

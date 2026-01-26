@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     });
 
     // Create Audit Log
-    await (prisma.auditLog as any).create({
+    await prisma.auditLog.create({
       data: {
         userId: user.id,
         action: "CREATE_MAPPING",
@@ -111,7 +111,7 @@ export async function DELETE(request: Request) {
     });
 
     // Create Audit Log
-    await (prisma.auditLog as any).create({
+    await prisma.auditLog.create({
       data: {
         userId: user.id,
         action: "DELETE_MAPPING",

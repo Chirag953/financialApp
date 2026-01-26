@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const secretKey = "secret"; // Use an environment variable in production!
+const secretKey = process.env.JWT_SECRET || "fallback_secret_for_dev_only";
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: unknown) {
