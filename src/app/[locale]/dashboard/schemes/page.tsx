@@ -197,12 +197,12 @@ export default function SchemesPage() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1 sm:flex-none items-center" onClick={handleExport} disabled={isLoading || schemes.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             {t('exportExcel')}
           </Button>
-          <Button className="flex items-center" onClick={() => { setSelectedScheme(null); setIsDialogOpen(true); }}>
+          <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedScheme(null); setIsDialogOpen(true); }}>
             <FileText className="w-4 h-4 mr-2" />
             {t('newScheme')}
           </Button>
@@ -378,7 +378,7 @@ export default function SchemesPage() {
                   ))
                 ) : schemes.length > 0 ? (
                   schemes.map((scheme: Scheme) => (
-                    <TableRow key={scheme.id} className={`hover:bg-slate-50 ${(isAllSelectedAcrossPages || selectedIds.includes(scheme.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
+                    <TableRow key={scheme.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(scheme.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
                       <TableCell>
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(scheme.id)}
@@ -419,7 +419,7 @@ export default function SchemesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                             title={tDept('edit')}
                             onClick={() => handleEdit(scheme)}
                           >
@@ -428,7 +428,7 @@ export default function SchemesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
                             title={tDept('delete')}
                             onClick={() => handleDeleteClick(scheme)}
                           >
@@ -477,21 +477,21 @@ export default function SchemesPage() {
                     </div>
                     <div className="flex gap-2">
                       <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
-                        onClick={() => handleEdit(scheme)}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50" 
-                        onClick={() => handleDeleteClick(scheme)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                          onClick={() => handleEdit(scheme)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                          onClick={() => handleDeleteClick(scheme)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                         (Number(scheme.pct_budget_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
                         (Number(scheme.pct_budget_expenditure) || 0) > 50 ? 'bg-orange-100 text-orange-700' : 
@@ -541,24 +541,25 @@ export default function SchemesPage() {
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-500 order-2 sm:order-1">
+            <div className="text-sm text-gray-500 text-center sm:text-left">
               {tDept('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {tDept('to')}{' '}
               <span className="font-medium">
                 {Math.min(page * limit, pagination.total)}
               </span>{' '}
               {tDept('of')} <span className="font-medium">{pagination.total}</span> {t('title').toLowerCase()}
             </div>
-            <div className="flex items-center space-x-2 order-1 sm:order-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1 || isLoading}
-                className="h-8 w-8 p-0"
+                className="flex-1 sm:flex-none h-8 px-3"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                {tDept('previous')}
               </Button>
-              <div className="text-sm font-medium">
+              <div className="text-sm font-medium min-w-[100px] text-center">
                 {tDept('page')} {page} {tDept('of')} {pagination.totalPages}
               </div>
               <Button
@@ -566,9 +567,10 @@ export default function SchemesPage() {
                 size="sm"
                 onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages || isLoading}
-                className="h-8 w-8 p-0"
+                className="flex-1 sm:flex-none h-8 px-3"
               >
-                <ChevronRight className="h-4 w-4" />
+                {tDept('next')}
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
           </div>

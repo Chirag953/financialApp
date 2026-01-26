@@ -208,15 +208,16 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               {tCommon('cancel')}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? tCommon('saving') : tCommon('save')}
             </Button>
           </DialogFooter>

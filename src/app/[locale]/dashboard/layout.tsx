@@ -22,6 +22,7 @@ import {
   MapPin,
   AlertCircle
 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useTranslations } from 'next-intl';
@@ -99,7 +100,19 @@ export default function DashboardLayout({
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)}></div>
         <div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white dark:bg-slate-900 border-r dark:border-slate-800 shadow-xl">
           <div className="flex items-center justify-between h-16 px-6 border-b dark:border-slate-800 bg-gradient-to-br from-emerald-600 to-blue-700">
-            <span className="text-xl font-bold text-white tracking-tight">Grant-001</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-md">
+                <Image 
+                  src="/logo.jpeg" 
+                  alt="Scheme Mapping System" 
+                  width={40} 
+                  height={40} 
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <span className="text-xl font-bold text-white tracking-tight">Scheme Mapping System</span>
+            </div>
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10" onClick={() => setIsSidebarOpen(false)}>
               <X className="w-6 h-6" />
             </Button>
@@ -138,7 +151,18 @@ export default function DashboardLayout({
       <div className="hidden lg:flex lg:shrink-0 lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900 border-r dark:border-slate-800 shadow-sm">
           <div className="flex items-center h-16 px-6 border-b dark:border-slate-800 bg-gradient-to-br from-emerald-600 to-blue-700">
-            <span className="text-xl font-bold text-white tracking-tight">Scheme Mapping System</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-md">
+                <Image 
+                  src="/logo.jpeg" 
+                  alt="Scheme Mapping System" 
+                  width={40} 
+                  height={40} 
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-xl font-bold text-white tracking-tight">Scheme Mapping System</span>
+            </div>
           </div>
           <ScrollArea className="flex-1 px-3 py-6">
             <nav className="space-y-1.5">
@@ -171,36 +195,59 @@ export default function DashboardLayout({
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        <header className="flex items-center justify-between h-16 px-6 bg-white dark:bg-slate-900 border-b dark:border-slate-800 shadow-sm">
-          <Button variant="ghost" size="icon" className="lg:hidden hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setIsSidebarOpen(true)}>
-            <Menu className="w-6 h-6" />
-          </Button>
-          <div className="flex items-center space-x-4 ml-auto">
-            <ThemeToggle />
-            <LanguageSwitcher />
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2" />
-            <div className="flex flex-col items-end mr-2">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-none">System Admin</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Administrator</span>
+        <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-white dark:bg-slate-900 border-b dark:border-slate-800 shadow-sm sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" className="lg:hidden hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => setIsSidebarOpen(true)}>
+              <Menu className="w-6 h-6" />
+            </Button>
+            <div className="lg:hidden flex items-center space-x-2">
+              <div className="w-9 h-9 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-sm border dark:border-slate-800">
+                <Image 
+                  src="/logo.jpeg" 
+                  alt="Scheme Mapping System" 
+                  width={36} 
+                  height={36} 
+                  className="object-contain"
+                />
+              </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-              SA
+          </div>
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="flex items-center space-x-1 md:space-x-2">
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </div>
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 md:mx-2" />
+            <div className="flex items-center gap-3 pl-1">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-none">System Admin</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Administrator</span>
+              </div>
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-sm ring-2 ring-white dark:ring-slate-800">
+                SA
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-3xl min-h-[calc(100vh-4rem)] flex flex-col">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-3xl min-h-[calc(100vh-4rem)] flex flex-col">
           <div className="flex-1">
             {children}
           </div>
           
-          <footer className="mt-auto pt-12 pb-6">
-            <div className="rounded-3xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-8 lg:p-10 transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-900/60">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          <footer className="mt-auto pt-8 md:pt-12 pb-6">
+            <div className="rounded-2xl md:rounded-3xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-6 md:p-8 lg:p-10 transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-900/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12">
                 <div className="space-y-6">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-                      <ShieldCheck className="w-6 h-6" />
+                    <div className="w-12 h-12 rounded-xl bg-white overflow-hidden flex items-center justify-center shadow-lg border dark:border-slate-800">
+                      <Image 
+                        src="/logo.jpeg" 
+                        alt="Scheme Mapping System" 
+                        width={48} 
+                        height={48} 
+                        className="object-contain"
+                      />
                     </div>
                     <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400">
                       {tf('systemName')}

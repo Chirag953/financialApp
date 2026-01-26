@@ -116,7 +116,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
               <Tags className="w-6 h-6 text-indigo-600" />
@@ -125,8 +125,8 @@ export default function CategoriesPage() {
             <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
           </div>
           {selectedIds.length > 0 && (
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-              <span className="text-sm text-slate-500 font-medium">
+            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border dark:border-slate-700">
+              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
                 {selectedIds.length} {tDept('selected')}
               </span>
               <Button 
@@ -147,7 +147,7 @@ export default function CategoriesPage() {
               variant="outline" 
               size="sm"
               onClick={handleSelectAll}
-              className="h-9"
+              className="flex-1 sm:flex-none h-9"
             >
               {selectedIds.length === categories.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
               {tDept('selectAll')}
@@ -155,7 +155,7 @@ export default function CategoriesPage() {
           )}
           <Button 
             onClick={handleAddClick}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center w-full sm:w-auto justify-center"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
           >
             <Plus className="w-4 h-4 mr-2" />
             {t('addCategory')}
@@ -279,7 +279,7 @@ export default function CategoriesPage() {
                       <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('definedParts')}</span>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {category.parts.map((part) => (
-                          <Badge key={part.id} variant="outline" className="bg-slate-50">
+                          <Badge key={part.id} variant="outline" className="bg-slate-50 dark:bg-slate-800/50">
                             {t('part')} {part.part_name}
                           </Badge>
                         ))}
@@ -301,7 +301,7 @@ export default function CategoriesPage() {
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-1"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 flex-1"
                     onClick={() => handleDeleteClick(category)}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -312,10 +312,10 @@ export default function CategoriesPage() {
             </Card>
           ))
         ) : (
-          <div className="col-span-full py-12 text-center bg-slate-50 rounded-xl border-2 border-dashed">
-            <Layers className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900">{t('noCategories')}</h3>
-            <p className="text-gray-500 mt-1">{t('startAdding')}</p>
+          <div className="col-span-full py-12 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border-2 border-dashed dark:border-slate-800">
+            <Layers className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('noCategories')}</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">{t('startAdding')}</p>
             <Button className="mt-4" variant="outline">
               <Plus className="w-4 h-4 mr-2" />
               {t('addFirst')}

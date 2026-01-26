@@ -7,7 +7,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Label } from "@/components/ui/label";
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
-import { Building2, Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const t = useTranslations('Login');
@@ -54,8 +55,15 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary dark:border-slate-800 relative z-10">
         <CardHeader className="space-y-4 pb-8">
           <div className="flex justify-center">
-            <div className="p-3 bg-primary/10 rounded-2xl">
-              <Building2 className="w-10 h-10 text-primary" />
+            <div className="p-1 bg-white dark:bg-slate-900 rounded-2xl shadow-lg shadow-emerald-500/10 overflow-hidden border dark:border-slate-800">
+              <Image 
+                src="/logo.jpeg" 
+                alt="Scheme Mapping System" 
+                width={120} 
+                height={120} 
+                className="object-contain"
+                priority
+              />
             </div>
           </div>
           <div className="space-y-1">

@@ -109,15 +109,16 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
               className="font-hindi"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? t('saving') : t('save')}
             </Button>
           </DialogFooter>

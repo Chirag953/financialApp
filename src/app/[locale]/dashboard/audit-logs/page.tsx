@@ -51,20 +51,20 @@ export default function AuditLogsPage() {
   };
 
   const getActionColor = (action: string) => {
-    if (action.includes('CREATE')) return 'bg-green-100 text-green-700 border-green-200';
-    if (action.includes('UPDATE')) return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (action.includes('DELETE')) return 'bg-red-100 text-red-700 border-red-200';
-    return 'bg-gray-100 text-gray-700 border-gray-200';
+    if (action.includes('CREATE')) return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800';
+    if (action.includes('UPDATE')) return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800';
+    if (action.includes('DELETE')) return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
+    return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <Button variant="outline" onClick={handleExport} disabled={isExporting || logs.length === 0}>
+        <Button variant="outline" onClick={handleExport} disabled={isExporting || logs.length === 0} className="w-full sm:w-auto justify-center h-10">
           <Download className="w-4 h-4 mr-2" />
           {t('exportExcel')}
         </Button>
@@ -103,16 +103,16 @@ export default function AuditLogsPage() {
                   ))
                 ) : logs.length > 0 ? (
                   logs.map((log: any) => (
-                    <TableRow key={log.id} className="hover:bg-slate-50">
-                      <TableCell className="text-xs text-gray-500 whitespace-nowrap">
+                    <TableRow key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <TableCell className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap">
                         {new Date(log.timestamp).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          <div className="p-1 bg-slate-100 rounded-full">
-                            <User className="w-3 h-3 text-slate-500" />
+                          <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                            <User className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                           </div>
-                          <span className="text-sm font-medium">{log.user?.name || t('system')}</span>
+                          <span className="text-sm font-medium dark:text-slate-200">{log.user?.name || t('system')}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -158,16 +158,16 @@ export default function AuditLogsPage() {
               ))
             ) : logs.length > 0 ? (
               logs.map((log: any) => (
-                <Card key={log.id} className="border-slate-200 hover:border-primary/30 transition-colors">
+                <Card key={log.id} className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-primary/30 transition-colors">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-start">
                       <div className="flex items-center space-x-2">
-                        <div className="p-1 bg-slate-100 rounded-full">
-                          <User className="w-3 h-3 text-slate-500" />
+                        <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
+                          <User className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                         </div>
-                        <span className="text-sm font-semibold">{log.user?.name || t('system')}</span>
+                        <span className="text-sm font-semibold dark:text-slate-200">{log.user?.name || t('system')}</span>
                       </div>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -176,19 +176,19 @@ export default function AuditLogsPage() {
                       <Badge variant="outline" className={`${getActionColor(log.action)} font-mono text-[10px]`}>
                         {t.has(log.action) ? t(log.action) : log.action}
                       </Badge>
-                      <span className="text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-600 rounded">
+                      <span className="text-[10px] font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
                         {log.module || t('system')}
                       </span>
                     </div>
 
-                    <div className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">
-                      <div className="font-medium text-[10px] text-slate-400 uppercase mb-1">{t('details')}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2 rounded border border-slate-100 dark:border-slate-800">
+                      <div className="font-medium text-[10px] text-slate-400 dark:text-slate-500 uppercase mb-1">{t('details')}</div>
                       <div className="line-clamp-2">
                         {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
                       </div>
                     </div>
 
-                    <div className="text-[10px] text-slate-400 text-right italic">
+                    <div className="text-[10px] text-slate-400 dark:text-slate-500 text-right italic">
                       {new Date(log.timestamp).toLocaleDateString()}
                     </div>
                   </CardContent>
@@ -202,25 +202,26 @@ export default function AuditLogsPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-2 py-4 border-t mt-4">
-            <div className="text-sm text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 border-t gap-4 mt-4">
+            <div className="text-sm text-gray-500 text-center sm:text-left order-2 sm:order-1">
               {t('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {t('to')}{' '}
               <span className="font-medium">
                 {Math.min(page * limit, pagination.total)}
               </span>{' '}
               {t('of')} <span className="font-medium">{pagination.total}</span> {t('logs')}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || isLoading || isFetching}
+                className="flex-1 sm:flex-none h-8 px-3"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 {t('previous')}
               </Button>
-              <div className="text-sm font-medium">
+              <div className="text-sm font-medium min-w-[100px] text-center">
                 {t('pageOf', { current: page, total: pagination.totalPages })}
               </div>
               <Button
@@ -228,6 +229,7 @@ export default function AuditLogsPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages || isLoading || isFetching}
+                className="flex-1 sm:flex-none h-8 px-3"
               >
                 {t('next')}
                 <ChevronRight className="w-4 h-4 ml-1" />

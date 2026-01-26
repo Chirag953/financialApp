@@ -104,7 +104,7 @@ export default function MappingPage() {
                   className={`w-full text-left p-3 rounded-lg border transition-all ${
                     selectedSchemeId === scheme.id 
                       ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary' 
-                      : 'hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'
+                      : 'hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900 dark:hover:bg-slate-800/50'
                   }`}
                 >
                   <div className="text-xs font-mono text-primary mb-1">{scheme.scheme_code}</div>
@@ -229,9 +229,9 @@ export default function MappingPage() {
                       Array(2).fill(0).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)
                     ) : mappings?.length > 0 ? (
                       mappings.map((mapping: any) => (
-                        <div key={mapping.id} className="p-3 border rounded-lg flex justify-between items-center bg-white shadow-sm">
+                        <div key={mapping.id} className="p-3 border rounded-lg flex justify-between items-center bg-white dark:bg-slate-900 shadow-sm">
                           <div>
-                            <div className="font-semibold text-sm">{mapping.category.name}</div>
+                            <div className="font-semibold text-sm dark:text-slate-200">{mapping.category.name}</div>
                             {mapping.part && (
                               <div className="mt-1">
                                 <Badge variant="outline" className="text-[10px] h-5">{t('partLabel', { name: mapping.part.part_name })}</Badge>

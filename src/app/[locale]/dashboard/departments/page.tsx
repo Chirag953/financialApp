@@ -148,17 +148,17 @@ export default function DepartmentsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" className="flex items-center" onClick={handleExport} disabled={isLoading || departments.length === 0}>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="flex-1 sm:flex-none items-center" onClick={handleExport} disabled={isLoading || departments.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             {t('exportExcel')}
           </Button>
-          <Button className="flex items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
+          <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
             <Building2 className="w-4 h-4 mr-2" />
             {t('addDept')}
           </Button>
@@ -310,7 +310,7 @@ export default function DepartmentsPage() {
                   ))
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
-                    <TableRow key={dept.id} className={(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}>
+                    <TableRow key={dept.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
                       <TableCell>
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
@@ -324,14 +324,14 @@ export default function DepartmentsPage() {
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-1">
                           <Link href={`/dashboard/departments/${dept.id}` as any}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title={t('viewDetails')}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={t('viewDetails')}>
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50" 
+                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
                             title={t('edit')}
                             onClick={() => handleEdit(dept)}
                           >
@@ -340,7 +340,7 @@ export default function DepartmentsPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" 
+                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
                             title={t('delete')}
                             onClick={() => handleDeleteClick(dept)}
                           >
@@ -403,19 +403,19 @@ export default function DepartmentsPage() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-amber-600 h-8 hover:bg-amber-50"
+                        className="text-amber-600 h-8 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                         onClick={() => handleEdit(dept)}
                       >
-                        <Pencil className="w-3.5 h-3.5 mr-1" />
+                        <Pencil className="w-3.5 h-3.5 mr-1.5" />
                         {t('edit')}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-red-600 h-8 hover:bg-red-50"
+                        className="text-red-600 h-8 hover:bg-red-50 dark:hover:bg-red-900/20"
                         onClick={() => handleDeleteClick(dept)}
                       >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
+                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                         {t('delete')}
                       </Button>
                     </div>
@@ -430,25 +430,26 @@ export default function DepartmentsPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-2 py-4 border-t">
-            <div className="text-sm text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 border-t gap-4">
+            <div className="text-sm text-gray-500 text-center sm:text-left">
               {t('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {t('to')}{' '}
               <span className="font-medium">
                 {Math.min(page * limit, pagination.total)}
               </span>{' '}
               {t('of')} <span className="font-medium">{pagination.total}</span> {t('title').toLowerCase()}
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || isLoading || isFetching}
+                className="flex-1 sm:flex-none"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
                 {t('previous')}
               </Button>
-              <div className="text-sm font-medium">
+              <div className="text-sm font-medium min-w-[100px] text-center">
                 {t('page')} {page} {t('of')} {pagination.totalPages}
               </div>
               <Button
@@ -456,6 +457,7 @@ export default function DepartmentsPage() {
                 size="sm"
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={page === pagination.totalPages || isLoading || isFetching}
+                className="flex-1 sm:flex-none"
               >
                 {t('next')}
                 <ChevronRight className="w-4 h-4 ml-1" />

@@ -103,7 +103,8 @@ src/
 - **Department Management**: Added functionality to edit (rename) and delete departments. Includes server-side validation, audit logging, and delete-protection for departments with active schemes.
 - **Scheme Management**: Implemented edit and delete functionality for schemes. Includes real-time percentage recalculation, audit logging, and delete-protection for mapped schemes.
 - **Category Management**: Enhanced category module with Edit/Delete support and custom icons/photos. Renamed "Parts" to "Sub Categories" system-wide for better clarity.
-- **Mobile-First Actions**: Added action buttons (Edit/Delete) to both desktop table and mobile card views for departments, schemes, and categories.
+- **Global Responsiveness & Dark Mode Fix**: Completed a comprehensive UI/UX overhaul to ensure full responsiveness across all breakpoints (mobile, tablet, desktop). Fixed critical dark-mode accessibility issues by standardizing hover states and high-contrast text colors.
+- **Mobile-First Actions**: Added action buttons (Edit/Delete) to both desktop table and mobile card views for departments, schemes, and categories. Updated all dialogs/forms to be mobile-friendly with stacked layouts on small screens.
 
 ---
 

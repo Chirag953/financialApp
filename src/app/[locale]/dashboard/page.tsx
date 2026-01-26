@@ -70,7 +70,7 @@ export default function DashboardPage() {
         <p className="text-gray-500 dark:text-gray-400">{t('welcome')}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {isLoading ? (
           Array(4).fill(0).map((_, i) => (
             <Card key={i}>
@@ -115,9 +115,9 @@ export default function DashboardPage() {
         />
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
         {/* Budget Utilization Card */}
-        <Card className="col-span-1">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="text-lg font-semibold flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-primary" />
@@ -160,23 +160,23 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-1">
+        <Card className="flex flex-col">
           <CardHeader>
             <CardTitle>{t('quickActions')}</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4">
-            <div className="grid grid-cols-2 gap-4">
-              <button className="flex flex-col items-center justify-center p-4 space-y-2 transition-colors border rounded-xl hover:bg-slate-50">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Building2 className="w-6 h-6 text-blue-600" />
+          <CardContent className="flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
+              <button className="flex flex-col items-center justify-center p-4 space-y-2 transition-colors border rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 group w-full h-full">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg group-hover:scale-110 transition-transform">
+                  <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-sm font-medium">{t('addDept')}</span>
+                <span className="text-sm font-medium dark:text-slate-400">{t('addDept')}</span>
               </button>
-              <button className="flex flex-col items-center justify-center p-4 space-y-2 transition-colors border rounded-xl hover:bg-slate-50">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <FileText className="w-6 h-6 text-green-600" />
+              <button className="flex flex-col items-center justify-center p-4 space-y-2 transition-colors border rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 group w-full h-full">
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg group-hover:scale-110 transition-transform">
+                  <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <span className="text-sm font-medium">{t('newScheme')}</span>
+                <span className="text-sm font-medium dark:text-slate-400">{t('newScheme')}</span>
               </button>
             </div>
           </CardContent>
@@ -196,14 +196,14 @@ export default function DashboardPage() {
               Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)
             ) : activities.length > 0 ? (
               activities.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 transition-colors border rounded-lg hover:bg-slate-50">
+                <div key={activity.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 gap-3 transition-colors border dark:border-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <div className="flex items-center space-x-4">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-900">{activity.action}</span>
-                      <span className="text-xs text-gray-500">{activity.module} • {activity.user}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{activity.action}</span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400 truncate">{activity.module} • {activity.user}</span>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-400 shrink-0 self-end sm:self-center">
                     {new Date(activity.time).toLocaleDateString()}
                   </div>
                 </div>

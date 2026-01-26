@@ -160,15 +160,16 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
               </SelectContent>
             </Select>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={isAdding || isUpdating}>
+            <Button type="submit" disabled={isAdding || isUpdating} className="w-full sm:w-auto">
               {isAdding || isUpdating ? tCommon('saving') : t('save')}
             </Button>
           </DialogFooter>

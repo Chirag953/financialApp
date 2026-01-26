@@ -72,12 +72,12 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <Button className="flex items-center" onClick={handleAdd}>
+        <Button className="flex items-center w-full sm:w-auto justify-center h-10" onClick={handleAdd}>
           <UserPlus className="w-4 h-4 mr-2" />
           {t('addUser')}
         </Button>
@@ -160,11 +160,11 @@ export default function UsersPage() {
               ))
             ) : (
               users.map((user: any) => (
-                <Card key={user.id} className="p-4 space-y-3">
+                <Card key={user.id} className="p-4 space-y-3 dark:bg-slate-900 dark:border-slate-800">
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="font-bold">{user.name || '---'}</div>
-                      <div className="text-sm text-gray-500 flex items-center mt-1">
+                      <div className="font-bold dark:text-slate-200">{user.name || '---'}</div>
+                      <div className="text-sm text-gray-500 dark:text-slate-400 flex items-center mt-1">
                         <Mail className="w-3 h-3 mr-1" />
                         {user.email}
                       </div>
@@ -174,17 +174,22 @@ export default function UsersPage() {
                     </Badge>
                   </div>
                   
-                  <div className="flex items-center justify-between pt-2 border-t text-[10px] text-gray-400">
+                  <div className="flex items-center justify-between pt-2 border-t dark:border-slate-800 text-[10px] text-gray-400 dark:text-slate-500">
                     <div className="flex items-center">
                       <Calendar className="w-3 h-3 mr-1" />
                       {new Date(user.createdAt).toLocaleDateString()}
                     </div>
-                    <div className="space-x-1">
-                      <Button variant="outline" size="sm" className="h-8 px-2" onClick={() => handleEdit(user)}>
-                        <Edit className="w-3.5 h-3.5 mr-1" />
+                    <div className="space-x-1 flex">
+                      <Button variant="outline" size="sm" className="h-8 px-2 dark:hover:bg-slate-800" onClick={() => handleEdit(user)}>
+                        <Edit className="w-3.5 h-3.5 mr-1 text-blue-600" />
                         {t('editUser')}
                       </Button>
-                      <Button variant="outline" size="sm" className="h-8 px-2 text-red-600 border-red-100 hover:bg-red-50" onClick={() => handleDelete(user.id)}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 px-2 text-red-600 border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                        onClick={() => handleDelete(user.id)}
+                      >
                         <Trash2 className="w-3.5 h-3.5 mr-1" />
                         {t('deleteUser')}
                       </Button>

@@ -32,6 +32,9 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Type Safety & Error Prevention**: Implemented `Number()` wrapping and null-safety checks across all `.toFixed()` operations in the dashboard, schemes, and department views to prevent runtime `TypeError`s.
 - **Tech Stack Setup (2.0)**: Next.js 14, Tailwind, Prisma, PostgreSQL, Redux Toolkit, and RTK Query integrated.
 
+- **UI/UX Responsiveness & Dark Mode (PRD 7.169)**: Fixed multiple responsiveness issues across all breakpoints (mobile, tablet, desktop). Elements like boxes, labels, text, and buttons are now properly aligned and contained. Fixed dark-mode hover contrast issues where item backgrounds would turn white, making text unreadable.
+- **Global Branding & Logo Replacement**: Replaced all company logos with the official `logo.jpeg`. Updated the login page, sidebar, mobile navigation, and footer with the new branding. Integrated the logo into the site metadata as the favicon/icon for a consistent professional look.
+
 ---
 
 ## 2. REMAINING TASKS ⏳
@@ -67,6 +70,13 @@ This file tracks the implementation status of features defined in the PRD (`docs
   - Removed debug logs and unused imports across the dashboard and middleware.
   - Replaced mock budget distribution data with real real-time calculations from category mappings.
   - Maintained project integrity by preserving legacy files required for future reference.
+
+### 2026-01-26: Global Branding, Responsiveness & Dark Mode Fixes
+- **Global Logo Replacement**: Systematically replaced all instances of placeholder logos and old branding with the official `logo.jpeg`. Optimized sizing for different layouts: 120x120 for login, 40x40 for sidebar, 36x36 for mobile nav, and 48x48 for the footer.
+- **Metadata Branding**: Integrated the new logo into the Next.js metadata system (`icons`) in the root layout to ensure the brand identity is consistent in browser tabs and bookmarks.
+- **Responsive Layout Overhaul**: Fixed overflowing elements, misaligned buttons, and container issues across all pages. Implemented `flex-col` for mobile footers and full-width buttons for smaller screens.
+- **Dark Mode Accessibility**: Resolved critical readability issues in dark mode by adding `dark:hover:bg-slate-800/50` and high-contrast text classes to interactive items in the Departments and Schemes modules.
+- **Documentation**: Updated `ISSUE_TRACKING.md` and `docs/prd.md` to reflect the latest UI/UX and branding improvements.
 
 ### 2026-01-26: Department Management & UI Stability
 - **Department Edit/Delete**: Implemented the ability to rename and delete departments. This included updating the API routes (`PUT`/`DELETE`), adding RTK Query mutations, and enhancing the `DepartmentDialog`.
@@ -107,8 +117,18 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Documentation**: Updated `docs/prd.md` and `ISSUE_TRACKING.md` to reflect category management enhancements and UI refinements.
 - **UI Consistency**: Integrated `AlertDialog` for category deletions and ensured action buttons are available in both desktop and mobile views.
 
+### 2026-01-26: UI/UX Responsiveness & Dark Mode Fixes
+- **Dark Mode Optimization**: Resolved high-contrast visibility issues where hover backgrounds turned white. Applied consistent `dark:hover:bg-slate-800/50` and `dark:text-slate-100` classes across all interactive elements in Departments, Schemes, Categories, and Dashboard modules.
+- **Global Responsiveness Overhaul**:
+  - **Layout**: Fixed header and footer alignment issues across all breakpoints.
+  - **Branding**: Replaced all placeholder icons with the official company logo (`logo.jpeg`) across Login, Sidebar, Header, and Footer modules.
+  - **Dashboard**: Optimized stat cards grid (1 col mobile, 2 col tablet, 4 col desktop) and converted recent activity items to a vertical layout on mobile to prevent overflow.
+  - **Tables & Pagination**: Standardized table headers with full-width action buttons on mobile. Refactored pagination to a stacked layout on smaller screens.
+  - **Dialogs & Forms**: Updated all CRUD dialogs (Department, Scheme, Category, User) to be mobile-friendly. Footers now use a `flex-col` layout with full-width buttons on mobile, ensuring no elements go outside their containers.
+- **Consistency Audit**: Verified all core pages (Audit Logs, Users, Settings) for consistent responsive behavior and dark-mode accessibility.
+
 ---
 
 ## 4. BUG TRACKING / TECHNICAL DEBT
-- [x] **Client-side Form Validation**: Implemented consistent client-side validation using `react-hook-form` and `zod` for Users, Schemes, Departments, and Categories modules.
-- [x] **DOM Nesting Compliance**: Fixed hydration errors caused by invalid HTML nesting (`div` inside `p`) in the department management dialog.
+- [x] **Dark Mode Hover Contrast**: Fixed unreadable text in dark mode due to white hover backgrounds.
+- [x] **Mobile Overflow**: Resolved overflow and alignment issues in headers, stat cards, and dialog footers across mobile/tablet breakpoints.

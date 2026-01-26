@@ -220,15 +220,16 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
             </div>
           )}
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              className="w-full sm:w-auto"
             >
               {tCommon('cancel')}
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? tCommon('saving') : tCommon('save')}
             </Button>
           </DialogFooter>
