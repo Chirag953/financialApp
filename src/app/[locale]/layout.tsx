@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { ReduxProvider } from "@/store/provider";
+import { ThemeProvider } from "@/components/theme-provider";
 
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { Toaster } from 'sonner';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,8 +21,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Grant-001 Management System",
-  description: "Centralized system for government budget and expenditure management",
+  title: "Scheme Mapping System",
+  description: "A centralized system for government budget and expenditure management.",
 };
 
 export default async function RootLayout({
@@ -47,9 +49,17 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <NextIntlClientProvider messages={messages}>
-          <ReduxProvider>
-            {children}
-          </ReduxProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ReduxProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </ReduxProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

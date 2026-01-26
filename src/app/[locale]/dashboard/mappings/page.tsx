@@ -71,8 +71,8 @@ export default function MappingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-        <p className="text-gray-500">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+        <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -103,13 +103,13 @@ export default function MappingPage() {
                   onClick={() => setSelectedSchemeId(scheme.id)}
                   className={`w-full text-left p-3 rounded-lg border transition-all ${
                     selectedSchemeId === scheme.id 
-                      ? 'border-primary bg-primary/5 ring-1 ring-primary' 
-                      : 'hover:border-gray-300 hover:bg-slate-50'
+                      ? 'border-primary bg-primary/5 dark:bg-primary/10 ring-1 ring-primary' 
+                      : 'hover:border-gray-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'
                   }`}
                 >
                   <div className="text-xs font-mono text-primary mb-1">{scheme.scheme_code}</div>
-                  <div className="text-sm font-semibold truncate">{scheme.scheme_name}</div>
-                  <div className="text-[10px] text-gray-400 mt-1 truncate">{scheme.department.name}</div>
+                  <div className="text-sm font-semibold truncate dark:text-gray-200">{scheme.scheme_name}</div>
+                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 truncate">{scheme.department.name}</div>
                 </button>
               ))}
             </div>
@@ -180,7 +180,7 @@ export default function MappingPage() {
                   <div className="hidden md:block rounded-md border">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-slate-50">
+                  <TableRow className="bg-slate-50 dark:bg-slate-900">
                           <TableHead>{t('category')}</TableHead>
                           <TableHead>{t('part')}</TableHead>
                           <TableHead className="text-right">{t('actions')}</TableHead>

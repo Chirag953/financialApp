@@ -44,6 +44,8 @@ model Category {
   id        String         @id @default(uuid())
   name      String         @unique
   has_parts Boolean        @default(false)
+  icon      String?        // For storing icon name (lucide icon)
+  image     String?        // For storing image URL or base64
   parts     CategoryPart[]
   mappings  Mapping[]
 }

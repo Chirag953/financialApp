@@ -30,10 +30,10 @@ export function LanguageSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => toggleLocale('en')} className={locale === 'en' ? 'bg-slate-100' : ''}>
+        <DropdownMenuItem onClick={() => toggleLocale('en')} className={locale === 'en' ? 'bg-slate-100 dark:bg-slate-800' : ''}>
           English
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => toggleLocale('hi')} className={locale === 'hi' ? 'bg-slate-100' : ''}>
+        <DropdownMenuItem onClick={() => toggleLocale('hi')} className={locale === 'hi' ? 'bg-slate-100 dark:bg-slate-800' : ''}>
           हिन्दी (Hindi)
         </DropdownMenuItem>
       </DropdownMenuContent>

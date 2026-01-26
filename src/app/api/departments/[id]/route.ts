@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+import { verifyAuth } from "@/lib/auth";
+import { cookies } from "next/headers";
+
+const departmentSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  nameHn: z.string().optional(),
+});
 
 export async function GET(
   request: Request,
@@ -38,5 +46,111 @@ export async function GET(
   } catch (error) {
     console.error("Fetch department error:", error);
     return NextResponse.json({ error: "Failed to fetch department" }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
+    const user = token ? await verifyAuth(token) : null;
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const validatedData = departmentSchema.parse(body);
+
+    const existingDepartment = await prisma.department.findUnique({
+      where: { id }
+    });
+
+    if (!existingDepartment) {
+      return NextResponse.json({ error: "Department not found" }, { status: 404 });
+    }
+
+    const updatedDepartment = await prisma.department.update({
+      where: { id },
+      data: {
+        name: validatedData.name,
+        nameHn: validatedData.nameHn,
+      },
+    });
+
+    // Create Audit Log
+    await (prisma.auditLog as any).create({
+      data: {
+        userId: user.id,
+        action: "UPDATE_DEPARTMENT",
+        module: "DEPARTMENTS",
+        details: {
+          before: existingDepartment,
+          after: updatedDepartment
+        },
+      },
+    });
+
+    return NextResponse.json(updatedDepartment);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.issues }, { status: 400 });
+    }
+    console.error("Update department error:", error);
+    return NextResponse.json({ error: "Failed to update department" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('session')?.value;
+    const user = token ? await verifyAuth(token) : null;
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const department = await prisma.department.findUnique({
+      where: { id },
+      include: { _count: { select: { schemes: true } } }
+    });
+
+    if (!department) {
+      return NextResponse.json({ error: "Department not found" }, { status: 404 });
+    }
+
+    if (department._count.schemes > 0) {
+      return NextResponse.json({ 
+        error: "Cannot delete department with existing schemes. Please delete or reassign schemes first." 
+      }, { status: 400 });
+    }
+
+    await prisma.department.delete({
+      where: { id }
+    });
+
+    // Create Audit Log
+    await (prisma.auditLog as any).create({
+      data: {
+        userId: user.id,
+        action: "DELETE_DEPARTMENT",
+        module: "DEPARTMENTS",
+        details: department as any,
+      },
+    });
+
+    return NextResponse.json({ message: "Department deleted successfully" });
+  } catch (error) {
+    console.error("Delete department error:", error);
+    return NextResponse.json({ error: "Failed to delete department" }, { status: 500 });
   }
 }

@@ -74,8 +74,8 @@ export default function UsersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{t('title')}</h1>
-          <p className="text-gray-500">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <Button className="flex items-center" onClick={handleAdd}>
           <UserPlus className="w-4 h-4 mr-2" />
@@ -98,7 +98,7 @@ export default function UsersPage() {
           <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
+                <TableRow className="bg-slate-50 dark:bg-slate-900">
                   <TableHead>{t('name')}</TableHead>
                   <TableHead>{t('email')}</TableHead>
                   <TableHead>{t('role')}</TableHead>

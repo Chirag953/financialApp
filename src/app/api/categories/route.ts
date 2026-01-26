@@ -8,6 +8,8 @@ const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   has_parts: z.boolean().default(false),
   parts: z.array(z.string()).optional(),
+  icon: z.string().optional().nullable(),
+  image: z.string().optional().nullable(),
 });
 
 export async function GET() {
@@ -40,10 +42,12 @@ export async function POST(request: Request) {
       data: {
         name: validatedData.name,
         has_parts: validatedData.has_parts,
-        parts: validatedData.parts ? {
-          create: validatedData.parts.map(partName => ({ part_name: partName }))
+        icon: validatedData.icon,
+        image: validatedData.image,
+        parts: validatedData.has_parts ? {
+          create: (validatedData.parts || []).map(partName => ({ part_name: partName }))
         } : undefined
-      },
+      } as any,
       include: { parts: true }
     });
 

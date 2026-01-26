@@ -21,7 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
-import { useAddSchemeMutation, useGetDepartmentsQuery } from '@/store/services/api';
+import { useAddSchemeMutation, useUpdateSchemeMutation, useGetDepartmentsQuery } from '@/store/services/api';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 const schemeSchema = z.object({
   scheme_code: z.string().length(13, 'Scheme code must be exactly 13 digits'),
@@ -38,12 +40,14 @@ type SchemeFormValues = z.infer<typeof schemeSchema>;
 interface SchemeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  scheme?: any;
 }
 
-export function SchemeDialog({ open, onOpenChange }: SchemeDialogProps) {
+export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) {
   const t = useTranslations('Schemes');
-  const tCommon = useTranslations('Departments'); // Reusing common translations
-  const [addScheme, { isLoading }] = useAddSchemeMutation();
+  const tCommon = useTranslations('Departments');
+  const [addScheme, { isLoading: isAdding }] = useAddSchemeMutation();
+  const [updateScheme, { isLoading: isUpdating }] = useUpdateSchemeMutation();
   const { data: deptsData } = useGetDepartmentsQuery({ limit: 100 });
   const departments = deptsData?.departments || [];
 
@@ -67,21 +71,52 @@ export function SchemeDialog({ open, onOpenChange }: SchemeDialogProps) {
     },
   });
 
+  useEffect(() => {
+    if (scheme) {
+      setValue('scheme_code', scheme.scheme_code);
+      setValue('scheme_name', scheme.scheme_name);
+      setValue('total_budget_provision', Number(scheme.total_budget_provision));
+      setValue('progressive_allotment', Number(scheme.progressive_allotment));
+      setValue('actual_progressive_expenditure', Number(scheme.actual_progressive_expenditure));
+      setValue('provisional_expenditure_current_month', Number(scheme.provisional_expenditure_current_month));
+      setValue('department_id', scheme.department_id);
+    } else {
+      reset({
+        scheme_code: '',
+        scheme_name: '',
+        total_budget_provision: 0,
+        progressive_allotment: 0,
+        actual_progressive_expenditure: 0,
+        provisional_expenditure_current_month: 0,
+        department_id: '',
+      });
+    }
+  }, [scheme, setValue, reset]);
+
   const onSubmit = async (data: SchemeFormValues) => {
     try {
-      await addScheme(data).unwrap();
+      if (scheme) {
+        await updateScheme({ id: scheme.id, body: data }).unwrap();
+        toast.success(t('updateSuccess') || 'Scheme updated successfully');
+      } else {
+        await addScheme(data).unwrap();
+        toast.success(t('createSuccess') || 'Scheme created successfully');
+      }
       reset();
       onOpenChange(false);
-    } catch (error) {
-      console.error('Failed to add scheme:', error);
+    } catch (error: any) {
+      console.error('Failed to save scheme:', error);
+      toast.error(error?.data?.error || 'Failed to save scheme');
     }
   };
+
+  const isLoading = isAdding || isUpdating;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>{t('newScheme')}</DialogTitle>
+          <DialogTitle>{scheme ? t('editScheme') : t('newScheme')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

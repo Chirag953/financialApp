@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
-import { useAddDepartmentMutation } from '@/store/services/api';
+import { useAddDepartmentMutation, useUpdateDepartmentMutation } from '@/store/services/api';
+import { useEffect } from 'react';
 
 const departmentSchema = z.object({
   name: z.string().min(3, 'Name must be at least 3 characters'),
@@ -26,11 +27,18 @@ type DepartmentFormValues = z.infer<typeof departmentSchema>;
 interface DepartmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  department?: {
+    id: string;
+    name: string;
+    nameHn: string;
+  } | null;
 }
 
-export function DepartmentDialog({ open, onOpenChange }: DepartmentDialogProps) {
+export function DepartmentDialog({ open, onOpenChange, department }: DepartmentDialogProps) {
   const t = useTranslations('Departments');
-  const [addDepartment, { isLoading }] = useAddDepartmentMutation();
+  const [addDepartment, { isLoading: isAdding }] = useAddDepartmentMutation();
+  const [updateDepartment, { isLoading: isUpdating }] = useUpdateDepartmentMutation();
+  const isLoading = isAdding || isUpdating;
 
   const {
     register,
@@ -45,13 +53,31 @@ export function DepartmentDialog({ open, onOpenChange }: DepartmentDialogProps) 
     },
   });
 
+  useEffect(() => {
+    if (department) {
+      reset({
+        name: department.name,
+        nameHn: department.nameHn || '',
+      });
+    } else {
+      reset({
+        name: '',
+        nameHn: '',
+      });
+    }
+  }, [department, reset]);
+
   const onSubmit = async (data: DepartmentFormValues) => {
     try {
-      await addDepartment(data).unwrap();
+      if (department) {
+        await updateDepartment({ id: department.id, body: data }).unwrap();
+      } else {
+        await addDepartment(data).unwrap();
+      }
       reset();
       onOpenChange(false);
     } catch (error) {
-      console.error('Failed to add department:', error);
+      console.error('Failed to save department:', error);
     }
   };
 
@@ -59,7 +85,7 @@ export function DepartmentDialog({ open, onOpenChange }: DepartmentDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('addDept')}</DialogTitle>
+          <DialogTitle>{department ? t('editDept') : t('addDept')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">

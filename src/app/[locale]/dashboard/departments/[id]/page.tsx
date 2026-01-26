@@ -52,12 +52,20 @@ export default function DepartmentDetailPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-              {isLoading ? <Skeleton className="h-8 w-64" /> : department?.name}
-            </h1>
-            <p className="text-sm text-gray-500">
-              {isLoading ? <Skeleton className="h-4 w-32 mt-1" /> : t('activeSchemes', { count: department?.summary.schemeCount })}
-            </p>
+            {isLoading ? (
+              <Skeleton className="h-8 w-64" />
+            ) : (
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+                {department?.name}
+              </h1>
+            )}
+            {isLoading ? (
+              <Skeleton className="h-4 w-32 mt-1" />
+            ) : (
+              <p className="text-sm text-gray-500">
+                {t('activeSchemes', { count: department?.summary.schemeCount })}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -103,7 +111,7 @@ export default function DepartmentDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="text-xl font-bold">
-              {isLoading ? <Skeleton className="h-7 w-16" /> : `${department?.summary.utilizationPercentage.toFixed(1)}%`}
+              {isLoading ? <Skeleton className="h-7 w-16" /> : `${(Number(department?.summary.utilizationPercentage) || 0).toFixed(1)}%`}
             </div>
             {!isLoading && <Progress value={department?.summary.utilizationPercentage} className="h-1.5" />}
           </CardContent>
@@ -120,10 +128,13 @@ export default function DepartmentDetailPage() {
               <TableHeader>
                 <TableRow className="bg-slate-50">
                   <TableHead className="w-32">{t('schemeCode')}</TableHead>
-                  <TableHead className="min-w-75">{t('schemeName')}</TableHead>
+                  <TableHead className="min-w-60">{t('schemeName')}</TableHead>
                   <TableHead className="text-right">{t('budget')}</TableHead>
+                  <TableHead className="text-right">{t('allotment')}</TableHead>
                   <TableHead className="text-right">{t('expenditure')}</TableHead>
                   <TableHead className="text-right">{t('pctUtil')}</TableHead>
+                  <TableHead className="text-right">{t('pctActual')}</TableHead>
+                  <TableHead className="text-right">{t('provExp')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -135,29 +146,42 @@ export default function DepartmentDetailPage() {
                       <TableCell><Skeleton className="h-4 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-full" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-full" /></TableCell>
                     </TableRow>
                   ))
                 ) : department?.schemes.length > 0 ? (
                   department.schemes.map((scheme: any) => (
                     <TableRow key={scheme.id}>
                       <TableCell className="font-mono text-xs">{scheme.scheme_code}</TableCell>
-                      <TableCell className="font-medium">{scheme.scheme_name}</TableCell>
+                      <TableCell className="font-medium text-sm">{scheme.scheme_name}</TableCell>
                       <TableCell className="text-right text-xs">{formatCurrency(Number(scheme.total_budget_provision))}</TableCell>
-                      <TableCell className="text-right text-xs">{formatCurrency(Number(scheme.actual_progressive_expenditure))}</TableCell>
+                      <TableCell className="text-right text-xs">{formatCurrency(Number(scheme.progressive_allotment))}</TableCell>
+                      <TableCell className="text-right text-xs font-bold text-blue-600">{formatCurrency(Number(scheme.actual_progressive_expenditure))}</TableCell>
                       <TableCell className="text-right">
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                          Number(scheme.pct_budget_expenditure) > 90 ? 'bg-red-100 text-red-700' : 
-                          Number(scheme.pct_budget_expenditure) > 50 ? 'bg-orange-100 text-orange-700' : 
+                          (Number(scheme.pct_budget_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
+                          (Number(scheme.pct_budget_expenditure) || 0) > 50 ? 'bg-orange-100 text-orange-700' : 
                           'bg-green-100 text-green-700'
                         }`}>
-                          {Number(scheme.pct_budget_expenditure).toFixed(1)}%
+                          {(Number(scheme.pct_budget_expenditure) || 0).toFixed(1)}%
                         </span>
                       </TableCell>
+                      <TableCell className="text-right">
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                          (Number(scheme.pct_actual_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
+                          'bg-blue-100 text-blue-700'
+                        }`}>
+                          {(Number(scheme.pct_actual_expenditure) || 0).toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-xs">{formatCurrency(Number(scheme.provisional_expenditure_current_month))}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-gray-500">
+                    <TableCell colSpan={8} className="h-24 text-center text-gray-500">
                       {t('noSchemes')}
                     </TableCell>
                   </TableRow>
