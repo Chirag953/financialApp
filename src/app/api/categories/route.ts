@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -77,7 +77,7 @@ export async function DELETE(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

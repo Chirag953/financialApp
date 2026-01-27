@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { 
   useGetUsersQuery, 
   useAddUserMutation, 
-  useUpdateUserMutation, 
-  useDeleteUserMutation 
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useBulkDeleteUsersMutation,
+  useGetMeQuery
 } from '@/store/services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -28,6 +30,16 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
   Select, 
   SelectContent, 
   SelectItem, 
@@ -36,19 +48,26 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserPlus, Edit, Trash2, Mail, Shield, Calendar } from 'lucide-react';
+import { UserPlus, Edit, Mail, Shield, Calendar, Trash2, Users2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { UserDialog } from '@/components/users/UserDialog';
+import { toast } from 'sonner';
 
 export default function UsersPage() {
   const t = useTranslations('Users');
+  const tCommon = useTranslations('Departments');
   const { data, isLoading } = useGetUsersQuery();
-  const [deleteUser] = useDeleteUserMutation();
+  const { data: meData } = useGetMeQuery();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [bulkDeleteUsers, { isLoading: isBulkDeleting }] = useBulkDeleteUsersMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
 
   const users = data?.users || [];
+  const currentUser = meData?.user;
 
   const handleEdit = (user: any) => {
     setEditingUser(user);
@@ -60,15 +79,28 @@ export default function UsersPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm(t('confirmDelete'))) {
-      try {
-        await deleteUser(id).unwrap();
-      } catch (err) {
-        console.error('Delete failed:', err);
-      }
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      await deleteUser(userToDelete.id).unwrap();
+      toast.success(t('deleteSuccess'));
+      setUserToDelete(null);
+    } catch (error) {
+      toast.error(t('deleteError'));
     }
   };
+
+  const handleBulkDelete = async () => {
+    try {
+      await bulkDeleteUsers({ mode: 'all_viewers' }).unwrap();
+      toast.success(t('bulkDeleteSuccess'));
+      setIsBulkDeleteDialogOpen(false);
+    } catch (error) {
+      toast.error(t('bulkDeleteError'));
+    }
+  };
+
+  const viewerCount = users.filter((u: any) => u.role === 'VIEWER').length;
 
   return (
     <div className="space-y-6">
@@ -77,10 +109,23 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
-        <Button className="flex items-center w-full sm:w-auto justify-center h-10" onClick={handleAdd}>
-          <UserPlus className="w-4 h-4 mr-2" />
-          {t('addUser')}
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          {viewerCount > 0 && (
+            <Button 
+              variant="destructive" 
+              className="flex items-center w-full sm:w-auto justify-center h-10"
+              onClick={() => setIsBulkDeleteDialogOpen(true)}
+              disabled={isBulkDeleting}
+            >
+              <Users2 className="w-4 h-4 mr-2" />
+              {t('deleteAllViewers')}
+            </Button>
+          )}
+          <Button className="flex items-center w-full sm:w-auto justify-center h-10" onClick={handleAdd}>
+            <UserPlus className="w-4 h-4 mr-2" />
+            {t('addUser')}
+          </Button>
+        </div>
       </div>
 
       <UserDialog 
@@ -88,6 +133,48 @@ export default function UsersPage() {
         onOpenChange={setIsDialogOpen} 
         editingUser={editingUser} 
       />
+
+      <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmDeleteDescription', { name: userToDelete?.name || userToDelete?.email })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isDeleting}
+            >
+              {isDeleting ? tCommon('deleting') : tCommon('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('confirmBulkDeleteTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('confirmBulkDeleteDescription', { count: viewerCount })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? tCommon('deleting') : tCommon('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Card>
         <CardHeader>
@@ -130,13 +217,22 @@ export default function UsersPage() {
                       <TableCell className="text-sm text-gray-500">
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
-                          <Edit className="w-4 h-4 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id)}>
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
+                            <Edit className="w-4 h-4 text-blue-600" />
+                          </Button>
+                          {user.role === 'VIEWER' && user.id !== currentUser?.id && (
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => setUserToDelete(user)}
+                              disabled={isDeleting}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -179,20 +275,23 @@ export default function UsersPage() {
                       <Calendar className="w-3 h-3 mr-1" />
                       {new Date(user.createdAt).toLocaleDateString()}
                     </div>
-                    <div className="space-x-1 flex">
+                    <div className="flex gap-2">
                       <Button variant="outline" size="sm" className="h-8 px-2 dark:hover:bg-slate-800" onClick={() => handleEdit(user)}>
                         <Edit className="w-3.5 h-3.5 mr-1 text-blue-600" />
                         {t('editUser')}
                       </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="h-8 px-2 text-red-600 border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                        onClick={() => handleDelete(user.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" />
-                        {t('deleteUser')}
-                      </Button>
+                      {user.role === 'VIEWER' && user.id !== currentUser?.id && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="h-8 px-2 border-red-200 hover:bg-red-50 dark:border-red-900/30 dark:hover:bg-red-900/20" 
+                          onClick={() => setUserToDelete(user)}
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1 text-red-600" />
+                          {tCommon('delete')}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>

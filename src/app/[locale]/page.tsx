@@ -19,6 +19,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const tf = useTranslations('Footer');
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -55,7 +57,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary dark:border-slate-800 relative z-10">
         <CardHeader className="space-y-4 pb-8">
           <div className="flex justify-center">
-            <div className="p-1 bg-white dark:bg-slate-900 rounded-2xl shadow-lg shadow-emerald-500/10 overflow-hidden border dark:border-slate-800">
+            <div className="overflow-hidden flex items-center justify-center">
               <Image 
                 src="/logo.jpeg" 
                 alt="Scheme Mapping System" 
@@ -133,6 +135,18 @@ export default function LoginPage() {
           </div>
         </CardFooter>
       </Card>
+
+      <footer className="absolute bottom-6 w-full px-4">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-center">
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+            {tf('copyright')}
+          </p>
+          <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800/50">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">System Live</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

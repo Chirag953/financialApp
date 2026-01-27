@@ -12,16 +12,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter, Pencil, Trash2, CheckSquare, Square, Upload } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
-import { exportToExcel } from '@/lib/export';
 import { 
   useGetSchemesQuery, 
   useGetDepartmentsQuery, 
   useDeleteSchemeMutation,
   useBulkDeleteSchemesMutation
 } from '@/store/services/api';
+import { useGetMeQuery } from '@/store/services/api';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { 
@@ -32,6 +32,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { SchemeDialog } from '@/components/schemes/SchemeDialog';
+import { BulkImportExportDialog } from '@/components/schemes/BulkImportExportDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +68,7 @@ export default function SchemesPage() {
   const [deptId, setDeptId] = useState('all');
   const [page, setPage] = useState(1);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isBulkImportExportOpen, setIsBulkImportExportOpen] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const [schemeToDelete, setSchemeToDelete] = useState<Scheme | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -74,6 +76,9 @@ export default function SchemesPage() {
   const [isAllSelectedAcrossPages, setIsAllSelectedAcrossPages] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const limit = 25;
+
+  const { data: userData } = useGetMeQuery();
+  const isAdmin = userData?.user?.role === 'ADMIN';
 
   const { data: schemesData, isLoading, isFetching } = useGetSchemesQuery({ 
     q: search, 
@@ -94,10 +99,24 @@ export default function SchemesPage() {
     if (isAllSelectedAcrossPages) {
       setIsAllSelectedAcrossPages(false);
       setSelectedIds([]);
-    } else if (selectedIds.length === schemes.length && schemes.length > 0) {
-      setSelectedIds([]);
+      return;
+    }
+
+    const allOnPageIds = schemes.map((s: Scheme) => s.id);
+    const areAllOnPageSelected = allOnPageIds.length > 0 && allOnPageIds.every((id: string) => selectedIds.includes(id));
+
+    if (areAllOnPageSelected) {
+      // Unselect all on current page
+      setSelectedIds(prev => prev.filter((id: string) => !allOnPageIds.includes(id)));
     } else {
-      setSelectedIds(schemes.map((s: Scheme) => s.id));
+      // Select all on current page
+      setSelectedIds(prev => {
+        const newIds = [...prev];
+        allOnPageIds.forEach((id: string) => {
+          if (!newIds.includes(id)) newIds.push(id);
+        });
+        return newIds;
+      });
     }
   };
 
@@ -132,11 +151,10 @@ export default function SchemesPage() {
     }
   };
 
-  const handleExport = async () => {
+  const handleSingleExport = async (scheme: Scheme) => {
     try {
       const params = new URLSearchParams({
-        q: search,
-        deptId: deptId === 'all' ? '' : deptId
+        schemeId: scheme.id
       });
       
       const response = await fetch(`/api/schemes/export?${params.toString()}`);
@@ -146,13 +164,15 @@ export default function SchemesPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Schemes_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.download = `Scheme_${scheme.scheme_code}_${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      toast.success(tDept('exportSuccess') || 'Exported successfully');
     } catch (err) {
       console.error('Export error:', err);
+      toast.error(tDept('exportError') || 'Failed to export');
     }
   };
 
@@ -198,14 +218,12 @@ export default function SchemesPage() {
           <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="flex-1 sm:flex-none items-center" onClick={handleExport} disabled={isLoading || schemes.length === 0}>
-            <Download className="w-4 h-4 mr-2" />
-            {t('exportExcel')}
-          </Button>
-          <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedScheme(null); setIsDialogOpen(true); }}>
-            <FileText className="w-4 h-4 mr-2" />
-            {t('newScheme')}
-          </Button>
+          {isAdmin && (
+            <Button className="flex-1 sm:flex-none items-center bg-blue-600 hover:bg-blue-700" onClick={() => setIsBulkImportExportOpen(true)}>
+              <Upload className="w-4 h-4 mr-2" />
+              {t('bulkImportExport')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -213,6 +231,11 @@ export default function SchemesPage() {
         open={isDialogOpen} 
         onOpenChange={setIsDialogOpen} 
         scheme={selectedScheme}
+      />
+
+      <BulkImportExportDialog
+        open={isBulkImportExportOpen}
+        onOpenChange={setIsBulkImportExportOpen}
       />
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -265,7 +288,7 @@ export default function SchemesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
-              {(selectedIds.length > 0 || isAllSelectedAcrossPages) && (
+              {isAdmin && (selectedIds.length > 0 || isAllSelectedAcrossPages) && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
                   <span className="text-sm text-slate-500 font-medium">
                     {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} {tDept('selected')}
@@ -315,7 +338,7 @@ export default function SchemesPage() {
         </CardHeader>
         <CardContent>
           {/* Selection Banner */}
-          {!isLoading && selectedIds.length === schemes.length && schemes.length > 0 && pagination.total > schemes.length && (
+          {isAdmin && !isLoading && selectedIds.length === schemes.length && schemes.length > 0 && pagination.total > schemes.length && (
             <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
               {isAllSelectedAcrossPages ? (
                 <>
@@ -350,13 +373,14 @@ export default function SchemesPage() {
                 <TableRow className="bg-slate-50 dark:bg-slate-900">
                   <TableHead className="w-10">
                     <Checkbox 
-                      checked={isAllSelectedAcrossPages || (selectedIds.length === schemes.length && schemes.length > 0)}
+                      checked={isAllSelectedAcrossPages || (schemes.length > 0 && schemes.every((s: Scheme) => selectedIds.includes(s.id)))}
                       onCheckedChange={handleSelectAll}
                       aria-label={tDept('selectAll')}
                     />
                   </TableHead>
                   <TableHead className="w-30">{t('code')}</TableHead>
-                  <TableHead className="min-w-50">{t('name')}</TableHead>
+                  <TableHead className="min-w-40">{t('name')}</TableHead>
+                  <TableHead className="min-w-30">{t('dept')}</TableHead>
                   <TableHead className="text-right">{t('totalBudget')}</TableHead>
                   <TableHead className="text-right">{t('allotment')}</TableHead>
                   <TableHead className="text-right">{t('expenditure')}</TableHead>
@@ -371,7 +395,7 @@ export default function SchemesPage() {
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                      {Array(9).fill(0).map((_, j) => (
+                      {Array(10).fill(0).map((_, j) => (
                         <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
                       ))}
                     </TableRow>
@@ -388,10 +412,10 @@ export default function SchemesPage() {
                       </TableCell>
                       <TableCell className="font-mono text-xs">{scheme.scheme_code}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{scheme.scheme_name}</span>
-                          <span className="text-[10px] text-gray-400">{scheme.department.name}</span>
-                        </div>
+                        <span className="font-medium text-sm">{scheme.scheme_name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{scheme.department.name}</span>
                       </TableCell>
                       <TableCell className="text-right text-xs font-medium">{formatCurrency(scheme.total_budget_provision)}</TableCell>
                       <TableCell className="text-right text-xs">{formatCurrency(scheme.progressive_allotment)}</TableCell>
@@ -419,28 +443,41 @@ export default function SchemesPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
-                            title={tDept('edit')}
-                            onClick={() => handleEdit(scheme)}
+                            className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" 
+                            title={t('exportExcel')}
+                            onClick={() => handleSingleExport(scheme)}
                           >
-                            <Pencil className="w-4 h-4" />
+                            <Download className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                            title={tDept('delete')}
-                            onClick={() => handleDeleteClick(scheme)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                                title={tDept('edit')}
+                                onClick={() => handleEdit(scheme)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                                title={tDept('delete')}
+                                onClick={() => handleDeleteClick(scheme)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-10 text-gray-500">
+                    <TableCell colSpan={11} className="text-center py-10 text-gray-500">
                       {t('noSchemes')}
                     </TableCell>
                   </TableRow>
@@ -479,19 +516,31 @@ export default function SchemesPage() {
                       <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
-                          onClick={() => handleEdit(scheme)}
+                          className="h-7 w-7 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" 
+                          onClick={() => handleSingleExport(scheme)}
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Download className="h-3.5 w-3.5" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                          onClick={() => handleDeleteClick(scheme)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                      {isAdmin && (
+                        <>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                            onClick={() => handleEdit(scheme)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                            onClick={() => handleDeleteClick(scheme)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
                         (Number(scheme.pct_budget_expenditure) || 0) > 90 ? 'bg-red-100 text-red-700' : 
                         (Number(scheme.pct_budget_expenditure) || 0) > 50 ? 'bg-orange-100 text-orange-700' : 

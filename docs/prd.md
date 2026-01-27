@@ -1,7 +1,7 @@
-# Grant-001 Management System - PRD
+# Scheme Mapping System - PRD
 
 ## 1. PROJECT OVERVIEW
-**Project Name:** Grant-001 Management System  
+**Project Name:** Scheme Mapping System  
 **Deployment Target:** Localhost (Dev Environment)  
 **Objective:** A centralized system to manage budget allocations, expenditures, and scheme-category mappings for 95 Government Departments.
 
@@ -55,6 +55,7 @@
 | 8. Provisional Exp. Current Month | Number (Decimal) |
 
 - **Export Feature:** Download current table view as Excel/CSV.
+- **Single Scheme Export:** Download individual schemes directly from the list or category view.
 - **Filtering:** Multi-category filtering and debounced search.
 - **Edit/Delete Support**: Authorized administrators can rename schemes or update their budget figures. Schemes with existing category mappings are protected from deletion.
 
@@ -97,14 +98,26 @@ src/
 
 ---
 
-## 7. RECENT REFINEMENTS (2026-01-26)
-- **Enhanced Visualization**: Department Detail view now mirrors the strict 8-column layout of the Schemes module for consistent data reporting.
-- **Notification System**: Integrated `sonner` for rich, accessible toast notifications across all administrative modules.
-- **Department Management**: Added functionality to edit (rename) and delete departments. Includes server-side validation, audit logging, and delete-protection for departments with active schemes.
-- **Scheme Management**: Implemented edit and delete functionality for schemes. Includes real-time percentage recalculation, audit logging, and delete-protection for mapped schemes.
-- **Category Management**: Enhanced category module with Edit/Delete support and custom icons/photos. Renamed "Parts" to "Sub Categories" system-wide for better clarity.
-- **Global Responsiveness & Dark Mode Fix**: Completed a comprehensive UI/UX overhaul to ensure full responsiveness across all breakpoints (mobile, tablet, desktop). Fixed critical dark-mode accessibility issues by standardizing hover states and high-contrast text colors.
-- **Mobile-First Actions**: Added action buttons (Edit/Delete) to both desktop table and mobile card views for departments, schemes, and categories. Updated all dialogs/forms to be mobile-friendly with stacked layouts on small screens.
+## 7. RECENT REFINEMENTS (2026-01-27)
+- **Role-Based Access Control (RBAC)**: Implemented a robust RBAC system with 'ADMIN' and 'VIEWER' roles.
+  - **Admin Role**: Full access to all modules, including user management, system settings, audit logs, and all CRUD operations (Create, Edit, Delete, Bulk Operations).
+  - **Viewer Role**: Read-only access to core data (Departments, Schemes, Categories, Mappings). Admin-only actions and navigation sections (Users, Settings, Audit Logs) are dynamically hidden.
+- **Server-Side Security**: Added role-based validation to all API mutation endpoints (POST, PUT, PATCH, DELETE). Unauthorized requests from non-admin users are rejected with a 401/403 status.
+- **Enhanced Category Insights**: Upgraded the Categories module with a "View Schemes" detail modal. This view provides a paginated list of all schemes assigned to a specific category, complete with search functionality and department attribution.
+- **Navigation Filtering**: Dashboard sidebar now dynamically filters navigation items based on the current user's role, ensuring a clean and relevant interface for all users.
+- **User Profile Integration**: Added `/api/auth/me` endpoint and `getMe` RTK Query to fetch and display the current user's role and profile information across the dashboard.
+- **Bug Fixes & System Stability**: Resolved critical linter errors by correctly exporting and importing `useGetMeQuery` across dashboard pages, ensuring a stable development and build environment.
+- **Audit Log Integrity**: All administrative actions (including user management and bulk operations) are now strictly logged with user attribution and detailed change tracking.
+- **User Management Refinement**: Enhanced the Users management module to allow administrators to delete 'Viewer' accounts. Self-deletion and deletion of other 'Admin' accounts remain restricted to ensure system stability and security. Added a "Delete All Viewers" bulk action for efficient account cleanup.
+- **Role-Based Deletion Logic**: Implemented strict server-side validation to ensure only users with the 'VIEWER' role can be deleted, preventing accidental removal of administrative access.
+- **Single Scheme Export**: Added functionality to export individual schemes as Excel files from both the main Schemes page and the Category Detail modal. This includes unique file naming using scheme codes and bilingual success/error notifications.
+- **Mapping Refinement**: Replaced the category-based scheme filter on the Mapping page with a department-based filter, allowing administrators to browse and map schemes by department.
+- **UI Simplification**: Removed the bulk "Export Excel" button from the Schemes page to focus on individual scheme exports and bulk import/export workflows.
+- **Enhanced RBAC for Viewers**: Refined the 'VIEWER' role permissions by:
+  - Removing the Mapping page from the navigation sidebar.
+  - Hiding Edit and Delete action buttons on the Schemes page.
+  - Removing "Quick Actions" and "Recent Administrative Activity" from the Dashboard.
+  - Implementing page-level access control to prevent direct URL access to restricted modules.
 
 ---
 
@@ -179,7 +192,8 @@ model AuditLog {
 - `useUpdateDepartmentMutation`: Rename existing departments (PUT).
 - `useDeleteDepartmentMutation`: Remove departments without linked schemes (DELETE).
 - `useGetSchemesQuery`: Fetch schemes with multi-category filtering.
-- `useExportSchemesMutation`: Trigger server-side Excel/CSV generation.
+- `useImportSchemesMutation`: Bulk import schemes via 8-column CSV with validation.
+- `useExportSchemesMutation`: Trigger server-side Excel generation for either filtered schemes or a single scheme via `schemeId` parameter.
 
 ---
 
@@ -194,7 +208,7 @@ model AuditLog {
 - **Component Responsiveness:**
   - **Tables:** Implementation of "Responsive Scroll" or "Stacked Card View" for the strict 8-column scheme table on mobile devices to ensure readability.
   - **Stat Cards:** Grid layout that shifts from 1 column (mobile) to 2 columns (tablet) and 4 columns (desktop).
-  - **Footer:** A multi-column, glassmorphism-style footer with system branding, versioning, support links, and a real-time system status indicator.
+  - **Footer:** A simplified footer showing only the copyright notice and a real-time system status indicator, ensuring a clean and focused user experience.
   - **Forms/Modals:** Centered and full-width on mobile; fixed width/centered on larger screens.
 - **Bilingual Support:** Toggle switch in Header for Hindi/English translation.
 - **Visual Feedback:** 

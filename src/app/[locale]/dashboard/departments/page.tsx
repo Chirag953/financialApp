@@ -16,11 +16,13 @@ import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye, Pencil, Tr
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel } from '@/lib/export';
+import { Badge } from '@/components/ui/badge';
 import { 
   useGetDepartmentsQuery, 
   useDeleteDepartmentMutation,
   useBulkDeleteDepartmentsMutation 
 } from '@/store/services/api';
+import { useGetMeQuery } from '@/store/services/api';
 import { Link } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { DepartmentDialog } from '@/components/departments/DepartmentDialog';
@@ -40,6 +42,9 @@ interface Department {
   id: string;
   name: string;
   nameHn: string;
+  _count?: {
+    schemes: number;
+  };
 }
 
 export default function DepartmentsPage() {
@@ -54,6 +59,9 @@ export default function DepartmentsPage() {
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
   const limit = 25;
   const t = useTranslations('Departments');
+
+  const { data: userData } = useGetMeQuery();
+  const isAdmin = userData?.user?.role === 'ADMIN';
 
   const { data, isLoading, isFetching } = useGetDepartmentsQuery({ 
     q: search, 
@@ -71,12 +79,24 @@ export default function DepartmentsPage() {
     if (isAllSelectedAcrossPages) {
       setIsAllSelectedAcrossPages(false);
       setSelectedIds([]);
-    } else if (selectedIds.length === departments.length && departments.length > 0) {
-      // If already all on current page are selected, but not all across pages
-      // and user clicks header checkbox again, clear all
-      setSelectedIds([]);
+      return;
+    }
+
+    const allOnPageIds = departments.map((d: Department) => d.id);
+    const areAllOnPageSelected = allOnPageIds.every(id => selectedIds.includes(id));
+
+    if (areAllOnPageSelected) {
+      // Unselect all on current page
+      setSelectedIds(prev => prev.filter(id => !allOnPageIds.includes(id)));
     } else {
-      setSelectedIds(departments.map((d: Department) => d.id));
+      // Select all on current page
+      setSelectedIds(prev => {
+        const newIds = [...prev];
+        allOnPageIds.forEach(id => {
+          if (!newIds.includes(id)) newIds.push(id);
+        });
+        return newIds;
+      });
     }
   };
 
@@ -158,10 +178,12 @@ export default function DepartmentsPage() {
             <Download className="w-4 h-4 mr-2" />
             {t('exportExcel')}
           </Button>
-          <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
-            <Building2 className="w-4 h-4 mr-2" />
-            {t('addDept')}
-          </Button>
+          {isAdmin && (
+            <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
+              <Building2 className="w-4 h-4 mr-2" />
+              {t('addDept')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -221,7 +243,7 @@ export default function DepartmentsPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
-              {(selectedIds.length > 0 || isAllSelectedAcrossPages) && (
+              {isAdmin && (selectedIds.length > 0 || isAllSelectedAcrossPages) && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
                   <span className="text-sm text-slate-500 font-medium">
                     {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} {t('selected')}
@@ -251,7 +273,7 @@ export default function DepartmentsPage() {
         </CardHeader>
         <CardContent>
           {/* Selection Banner */}
-          {!isLoading && selectedIds.length === departments.length && departments.length > 0 && pagination.total > departments.length && (
+          {isAdmin && !isLoading && selectedIds.length === departments.length && departments.length > 0 && pagination.total > departments.length && (
             <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
               {isAllSelectedAcrossPages ? (
                 <>
@@ -284,16 +306,19 @@ export default function DepartmentsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-900">
-                  <TableHead className="w-12">
-                    <Checkbox 
-                      checked={isAllSelectedAcrossPages || (selectedIds.length === departments.length && departments.length > 0)}
-                      onCheckedChange={handleSelectAll}
-                      aria-label={t('selectAll')}
-                    />
-                  </TableHead>
+                  {isAdmin && (
+                    <TableHead className="w-12">
+                      <Checkbox 
+                        checked={isAllSelectedAcrossPages || (departments.length > 0 && departments.every(d => selectedIds.includes(d.id)))}
+                        onCheckedChange={handleSelectAll}
+                        aria-label={t('selectAll')}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead className="w-20">{t('sNo')}</TableHead>
                   <TableHead>{t('nameEn')}</TableHead>
                   <TableHead>{t('nameHn')}</TableHead>
+                  <TableHead className="text-center">{t('schemesCount') || 'Schemes'}</TableHead>
                   <TableHead className="text-right w-40">{t('actions')}</TableHead>
                 </TableRow>
               </TableHeader>
@@ -301,26 +326,34 @@ export default function DepartmentsPage() {
                 {isLoading || isFetching ? (
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      {isAdmin && <TableCell><Skeleton className="h-4 w-4" /></TableCell>}
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
                     <TableRow key={dept.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
-                      <TableCell>
-                        <Checkbox 
-                          checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
-                          onCheckedChange={() => handleSelectOne(dept.id)}
-                          aria-label={`Select ${dept.name}`}
-                        />
-                      </TableCell>
+                      {isAdmin && (
+                        <TableCell>
+                          <Checkbox 
+                            checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
+                            onCheckedChange={() => handleSelectOne(dept.id)}
+                            aria-label={`Select ${dept.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium text-gray-500">{(page - 1) * limit + index + 1}</TableCell>
                       <TableCell className="font-medium">{dept.name}</TableCell>
                       <TableCell className="text-slate-600 font-hindi">{dept.nameHn}</TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 hover:bg-blue-200" : "text-gray-400"}>
+                          {dept._count?.schemes || 0}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-1">
                           <Link href={`/dashboard/departments/${dept.id}` as any}>
@@ -328,24 +361,28 @@ export default function DepartmentsPage() {
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
-                            title={t('edit')}
-                            onClick={() => handleEdit(dept)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                            title={t('delete')}
-                            onClick={() => handleDeleteClick(dept)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {isAdmin && (
+                            <>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                                title={t('edit')}
+                                onClick={() => handleEdit(dept)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                                title={t('delete')}
+                                onClick={() => handleDeleteClick(dept)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -398,7 +435,13 @@ export default function DepartmentsPage() {
                       </div>
                     </div>
                     <h3 className="font-bold text-slate-900 mb-1">{dept.name}</h3>
-                    <p className="text-sm text-slate-600 font-hindi mb-4">{dept.nameHn}</p>
+                    <p className="text-sm text-slate-600 font-hindi mb-2">{dept.nameHn}</p>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-xs text-slate-500">{t('schemesCount') || 'Schemes'}:</span>
+                      <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 h-5 text-[10px]" : "text-gray-400 h-5 text-[10px]"}>
+                        {dept._count?.schemes || 0}
+                      </Badge>
+                    </div>
                     <div className="flex justify-end border-t pt-3 space-x-2">
                       <Button 
                         variant="ghost" 

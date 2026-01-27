@@ -12,7 +12,7 @@ export async function PATCH(
     const sessionToken = (await cookies()).get('session')?.value;
     const session = sessionToken ? await verifyAuth(sessionToken) : null;
     
-    if (!session) {
+    if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -63,7 +63,7 @@ export async function DELETE(
     const sessionToken = (await cookies()).get('session')?.value;
     const session = sessionToken ? await verifyAuth(sessionToken) : null;
     
-    if (!session) {
+    if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -72,6 +72,20 @@ export async function DELETE(
     // Prevent self-deletion
     if (id === session.id) {
       return NextResponse.json({ error: 'Cannot delete your own account' }, { status: 400 });
+    }
+
+    // Check if the user is a VIEWER
+    const userToDelete = await prisma.user.findUnique({
+      where: { id },
+      select: { role: true }
+    });
+
+    if (!userToDelete) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (userToDelete.role !== 'VIEWER') {
+      return NextResponse.json({ error: 'Only viewers can be deleted' }, { status: 403 });
     }
 
     await prisma.user.delete({ where: { id } });

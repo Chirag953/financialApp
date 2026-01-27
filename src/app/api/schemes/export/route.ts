@@ -7,16 +7,30 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
     const deptId = searchParams.get('deptId') || '';
+    const categoryId = searchParams.get('categoryId') || '';
+    const schemeId = searchParams.get('schemeId') || '';
 
-    const where: any = {
-      OR: [
+    const where: any = {};
+
+    if (schemeId) {
+      where.id = schemeId;
+    } else {
+      where.OR = [
         { scheme_name: { contains: query, mode: 'insensitive' } },
         { scheme_code: { contains: query, mode: 'insensitive' } },
-      ],
-    };
+      ];
+    }
 
     if (deptId) {
       where.department_id = deptId;
+    }
+
+    if (categoryId) {
+      where.mappings = {
+        some: {
+          category_id: categoryId
+        }
+      };
     }
 
     const schemes = await prisma.scheme.findMany({

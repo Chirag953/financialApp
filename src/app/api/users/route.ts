@@ -9,7 +9,7 @@ export async function GET() {
     const sessionToken = (await cookies()).get('session')?.value;
     const session = sessionToken ? await verifyAuth(sessionToken) : null;
     
-    if (!session) {
+    if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const sessionToken = (await cookies()).get('session')?.value;
     const session = sessionToken ? await verifyAuth(sessionToken) : null;
     
-    if (!session) {
+    if (!session || session.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -82,5 +82,45 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('User creation error:', error);
     return NextResponse.json({ error: 'Failed to create user' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const sessionToken = (await cookies()).get('session')?.value;
+    const session = sessionToken ? await verifyAuth(sessionToken) : null;
+    
+    if (!session || session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const mode = searchParams.get('mode');
+
+    if (mode === 'all_viewers') {
+      const result = await prisma.user.deleteMany({
+        where: {
+          role: 'VIEWER',
+          id: { not: session.id } // Just in case an admin has role viewer (though unlikely)
+        }
+      });
+
+      // Log the action
+      await prisma.auditLog.create({
+        data: {
+          userId: session.id,
+          action: 'BULK_DELETE_VIEWERS',
+          module: 'USER_MGMT',
+          details: { count: result.count },
+        },
+      });
+
+      return NextResponse.json({ success: true, count: result.count });
+    }
+
+    return NextResponse.json({ error: 'Invalid delete mode' }, { status: 400 });
+  } catch (error) {
+    console.error('Bulk user deletion error:', error);
+    return NextResponse.json({ error: 'Failed to delete viewers' }, { status: 500 });
   }
 }

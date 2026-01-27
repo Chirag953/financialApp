@@ -19,25 +19,57 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
     const deptId = searchParams.get('deptId') || '';
+    const categoryId = searchParams.get('categoryId') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '25');
     const skip = (page - 1) * limit;
 
     const where: any = {
-      OR: [
-        { scheme_name: { contains: query, mode: 'insensitive' } },
-        { scheme_code: { contains: query, mode: 'insensitive' } },
-      ],
+      AND: [
+        {
+          OR: [
+            { scheme_name: { contains: query, mode: 'insensitive' } },
+            { scheme_code: { contains: query, mode: 'insensitive' } },
+            { 
+              mappings: {
+                some: {
+                  category: {
+                    name: { contains: query, mode: 'insensitive' }
+                  }
+                }
+              }
+            }
+          ],
+        }
+      ]
     };
 
     if (deptId) {
-      where.department_id = deptId;
+      where.AND.push({ department_id: deptId });
+    }
+
+    if (categoryId) {
+      where.AND.push({
+        mappings: {
+          some: {
+            category_id: categoryId
+          }
+        }
+      });
     }
 
     const [schemes, total] = await Promise.all([
       prisma.scheme.findMany({
         where,
-        include: { department: { select: { name: true, nameHn: true } } } as any,
+        include: { 
+          department: { select: { name: true, nameHn: true } },
+          mappings: {
+            include: {
+              category: true,
+              part: true
+            }
+          }
+        } as any,
         orderBy: { scheme_code: 'asc' },
         skip,
         take: limit,
@@ -69,7 +101,7 @@ export async function POST(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -119,7 +151,7 @@ export async function DELETE(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -141,6 +173,23 @@ export async function DELETE(request: Request) {
         where.department_id = deptId;
       }
 
+      // Check for schemes with mappings first
+      const schemesWithMappings = await prisma.scheme.findMany({
+        where: {
+          ...where,
+          mappings: { some: {} }
+        },
+        select: { scheme_name: true }
+      });
+
+      if (schemesWithMappings.length > 0) {
+        const names = schemesWithMappings.slice(0, 5).map(s => s.scheme_name).join(', ');
+        const count = schemesWithMappings.length;
+        return NextResponse.json({ 
+          error: `Cannot delete schemes with existing mappings. ${count} scheme(s) like ${names} are already mapped to categories.` 
+        }, { status: 400 });
+      }
+
       const deleted = await prisma.scheme.deleteMany({ where });
 
       // Audit Log
@@ -156,6 +205,24 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ count: deleted.count });
     } else if (idsString) {
       const ids = idsString.split(',');
+
+      // Check for schemes with mappings first
+      const schemesWithMappings = await prisma.scheme.findMany({
+        where: {
+          id: { in: ids },
+          mappings: { some: {} }
+        },
+        select: { scheme_name: true }
+      });
+
+      if (schemesWithMappings.length > 0) {
+        const names = schemesWithMappings.slice(0, 5).map(s => s.scheme_name).join(', ');
+        const count = schemesWithMappings.length;
+        return NextResponse.json({ 
+          error: `Cannot delete selected schemes. ${count} scheme(s) like ${names} are already mapped to categories.` 
+        }, { status: 400 });
+      }
+
       const deleted = await prisma.scheme.deleteMany({
         where: { id: { in: ids } }
       });

@@ -59,7 +59,7 @@ export async function PUT(
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -115,7 +115,7 @@ export async function DELETE(
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -128,23 +128,44 @@ export async function DELETE(
       return NextResponse.json({ error: "Department not found" }, { status: 404 });
     }
 
-    if (department._count.schemes > 0) {
-      return NextResponse.json({ 
-        error: "Cannot delete department with existing schemes. Please delete or reassign schemes first." 
-      }, { status: 400 });
-    }
+    // Perform deletion in a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // 1. Get all schemes for this department to delete their mappings
+      const schemes = await tx.scheme.findMany({
+        where: { department_id: id },
+        select: { id: true }
+      });
+      
+      const schemeIds = schemes.map(s => s.id);
 
-    await prisma.department.delete({
-      where: { id }
+      if (schemeIds.length > 0) {
+        // 2. Delete all mappings associated with these schemes
+        await tx.mapping.deleteMany({
+          where: { scheme_id: { in: schemeIds } }
+        });
+
+        // 3. Delete all schemes associated with this department
+        await tx.scheme.deleteMany({
+          where: { department_id: id }
+        });
+      }
+
+      // 4. Finally delete the department
+      await tx.department.delete({
+        where: { id }
+      });
     });
 
     // Create Audit Log
     await (prisma.auditLog as any).create({
       data: {
         userId: user.id,
-        action: "DELETE_DEPARTMENT",
+        action: "DELETE_DEPARTMENT_CASCADE",
         module: "DEPARTMENTS",
-        details: department as any,
+        details: {
+          department: department as any,
+          schemesDeleted: department._count.schemes
+        },
       },
     });
 

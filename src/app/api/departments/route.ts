@@ -25,6 +25,11 @@ export async function GET(request: Request) {
             { nameHn: { contains: query, mode: 'insensitive' } } as any,
           ],
         },
+        include: {
+          _count: {
+            select: { schemes: true }
+          }
+        },
         orderBy: { name: 'asc' },
         skip,
         take: limit,
@@ -60,7 +65,7 @@ export async function POST(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -100,7 +105,7 @@ export async function DELETE(request: Request) {
     const token = cookieStore.get('session')?.value;
     const user = token ? await verifyAuth(token) : null;
 
-    if (!user) {
+    if (!user || user.role !== 'ADMIN') {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -118,36 +123,92 @@ export async function DELETE(request: Request) {
         ],
       };
 
-      const deleted = await prisma.department.deleteMany({ where });
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Get IDs of departments that will be deleted
+        const deptsToDelete = await tx.department.findMany({
+          where,
+          select: { id: true }
+        });
+        const deptIds = deptsToDelete.map(d => d.id);
+
+        if (deptIds.length === 0) return { count: 0 };
+
+        // 2. Get all schemes for these departments
+        const schemesToDelete = await tx.scheme.findMany({
+          where: { department_id: { in: deptIds } },
+          select: { id: true }
+        });
+        const schemeIds = schemesToDelete.map(s => s.id);
+
+        if (schemeIds.length > 0) {
+          // 3. Delete all mappings for these schemes
+          await tx.mapping.deleteMany({
+            where: { scheme_id: { in: schemeIds } }
+          });
+
+          // 4. Delete all schemes
+          await tx.scheme.deleteMany({
+            where: { department_id: { in: deptIds } }
+          });
+        }
+
+        // 5. Delete departments
+        const deleted = await tx.department.deleteMany({ where });
+        return deleted;
+      });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_DEPARTMENTS",
+          action: "BULK_DELETE_DEPARTMENTS_CASCADE",
           module: "DEPARTMENTS",
-          details: { count: deleted.count, query },
+          details: { count: result.count, query },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     } else if (idsString) {
       const ids = idsString.split(',');
-      const deleted = await prisma.department.deleteMany({
-        where: { id: { in: ids } }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Get all schemes for these departments
+        const schemesToDelete = await tx.scheme.findMany({
+          where: { department_id: { in: ids } },
+          select: { id: true }
+        });
+        const schemeIds = schemesToDelete.map(s => s.id);
+
+        if (schemeIds.length > 0) {
+          // 2. Delete all mappings for these schemes
+          await tx.mapping.deleteMany({
+            where: { scheme_id: { in: schemeIds } }
+          });
+
+          // 3. Delete all schemes
+          await tx.scheme.deleteMany({
+            where: { department_id: { in: ids } }
+          });
+        }
+
+        // 4. Delete departments
+        const deleted = await tx.department.deleteMany({
+          where: { id: { in: ids } }
+        });
+        return deleted;
       });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_DEPARTMENTS",
+          action: "BULK_DELETE_DEPARTMENTS_CASCADE",
           module: "DEPARTMENTS",
-          details: { count: deleted.count, ids },
+          details: { count: result.count, ids },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     }
 
     return NextResponse.json({ error: "No IDs provided" }, { status: 400 });

@@ -9,6 +9,9 @@ export const api = createApi({
       query: () => 'settings',
       providesTags: ['Setting'],
     }),
+    getMe: builder.query<{ user: any }, void>({
+      query: () => 'auth/me',
+    }),
     updateSettings: builder.mutation<any, { settings: Record<string, string> }>({
       query: (body) => ({
         url: 'settings',
@@ -40,6 +43,13 @@ export const api = createApi({
     deleteUser: builder.mutation<any, string>({
       query: (id) => ({
         url: `users/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
+    bulkDeleteUsers: builder.mutation<any, { mode: 'all_viewers' }>({
+      query: ({ mode }) => ({
+        url: `users?mode=${mode}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['User'],
@@ -91,9 +101,9 @@ export const api = createApi({
       },
       invalidatesTags: ['Department'],
     }),
-    getSchemes: builder.query<any, { q?: string; deptId?: string; page?: number; limit?: number }>({
-      query: ({ q = '', deptId = '', page = 1, limit = 25 }) => 
-        `schemes?q=${q}&deptId=${deptId}&page=${page}&limit=${limit}`,
+    getSchemes: builder.query<any, { q?: string; deptId?: string; categoryId?: string; page?: number; limit?: number }>({
+      query: ({ q = '', deptId = '', categoryId = '', page = 1, limit = 25 }) => 
+        `schemes?q=${q}&deptId=${deptId}&categoryId=${categoryId}&page=${page}&limit=${limit}`,
       providesTags: ['Scheme'],
     }),
     addScheme: builder.mutation<any, any>({
@@ -134,8 +144,17 @@ export const api = createApi({
       },
       invalidatesTags: ['Scheme'],
     }),
-    getCategories: builder.query<any, void>({
-      query: () => 'categories',
+    importSchemes: builder.mutation<any, FormData>({
+      query: (formData) => ({
+        url: 'schemes/bulk-import',
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Scheme'],
+    }),
+    getCategories: builder.query<any, { q?: string; page?: number; limit?: number }>({
+      query: ({ q = '', page = 1, limit = 25 }) => 
+        `categories?q=${q}&page=${page}&limit=${limit}`,
       providesTags: ['Category'],
     }),
     addCategory: builder.mutation<any, any>({
@@ -205,6 +224,7 @@ export const api = createApi({
 });
 
 export const { 
+  useGetMeQuery,
   useGetSettingsQuery,
   useUpdateSettingsMutation,
   useGetDepartmentsQuery, 
@@ -218,6 +238,7 @@ export const {
   useUpdateSchemeMutation,
   useDeleteSchemeMutation,
   useBulkDeleteSchemesMutation,
+  useImportSchemesMutation,
   useGetCategoriesQuery,
   useAddCategoryMutation,
   useUpdateCategoryMutation,
@@ -231,5 +252,6 @@ export const {
   useGetUsersQuery,
   useAddUserMutation,
   useUpdateUserMutation,
-  useDeleteUserMutation
+  useDeleteUserMutation,
+  useBulkDeleteUsersMutation,
 } = api;

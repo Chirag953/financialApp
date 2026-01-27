@@ -1,10 +1,11 @@
-# ISSUE TRACKING - Grant-001 Management System
+# ISSUE TRACKING - Scheme Mapping System
 
 This file tracks the implementation status of features defined in the PRD (`docs/prd.md`).
 
 ## 1. COMPLETED TASKS ✅
 - **Authentication (3.1)**: JWT-based login/logout implemented with HTTP-only cookies.
-- **User Management (PRD 4.75)**: Full CRUD interface for managing system administrators with role-based badges and audit logging. Refactored to use `react-hook-form` and `zod` for consistent validation.
+- **User Management (PRD 4.75)**: Implemented management interface for system administrators with role-based badges and audit logging. Refactored to use `react-hook-form` and `zod` for consistent validation. User deletion is restricted to 'Viewer' accounts only, with self-deletion and admin-deletion disabled for security.
+- **Bulk User Deletion**: Added functionality for admins to delete all 'Viewer' accounts in a single action, complete with audit logging and confirmation dialogs.
 - **Departments Module (3.3)**: Listing of 95 departments with pagination (25/page) and debounced search.
 - **Scheme Management (3.4)**: Strict 8-column table with search, department filtering, and server-side Excel export for handling large datasets.
 - **Category Management (3.5)**: API and UI for managing budget categories (Child, Gender, Green) and their parts.
@@ -14,13 +15,36 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Department Detail View (3.3)**: Dedicated detail pages for departments with scheme-wise financial breakdown.
 - **Audit Log UI (3.2, 9.280)**: Full activity log interface with filtering and user attribution.
 - **Dashboard Visualization (PRD 3.2)**: Added interactive Bar and Pie charts using `recharts` for budget vs expenditure analysis by department and category.
+- **Enhanced Mapping & Category Insights**: 
+    - Implemented real-time category filtering and searching on the Mapping page.
+    - Added "Category Detail Modal" to browse all schemes within a category with internal searching.
+    - Displaying assigned category badges directly on scheme cards for immediate visibility.
+    - Added "View Schemes" functionality to the Category management page.
+- **Role-Based Access Control (RBAC)**: Implemented a robust RBAC system with 'ADMIN' and 'VIEWER' roles. Admin-only actions and navigation are hidden from viewers, and all administrative API routes are protected server-side.
+- **Enhanced Category Insights**: Upgraded the Categories module with a paginated "View Schemes" detail modal, including search functionality and i18n support.
 - **Bilingual Support (PRD 2.22, 7.172, 9.282)**: Full localization for Hindi/English across all modules (Dashboard, Departments, Schemes, Categories, Mappings, Audit Logs, Login).
 - **System Settings (PRD 4.75)**: Global configuration for fiscal year selection, system-wide constants, and maintenance mode. Fully implemented with localized system names and integrated into audit logs.
-- **Enhanced Dashboard UI (PRD 7.187)**: Added a stylish, responsive footer with glassmorphism effects, multi-column layout, and localized branding.
+- **Enhanced Dashboard UI (PRD 7.187)**: Simplified the global footer to show only the copyright and "System Live" status, ensuring a cleaner look across the project.
 - **Mobile UI Optimization (PRD 7.169)**: Implemented responsive "Stacked Card View" for all major data tables (Schemes, Departments, Audit Logs, Categories) to ensure usability on mobile devices.
-- **Recent Refinements**: Fixed stale dashboard translation keys, localized audit log action labels, and resolved fatal Turbopack errors by disabling `reactCompiler` and migrating `middleware.ts` to `proxy.ts` per Next.js 16 conventions.
+- **Bulk Import/Export (Schemes)**: Replaced the "Add Scheme" button with a comprehensive "Bulk Import/Export" feature. 
+    - Implemented a responsive modal with options to Import/Export schemes.
+    - Provided a downloadable 8-column CSV template for data preparation.
+    - Built a robust CSV import flow with validation for mandatory columns, data types, and department selection.
+    - Implemented server-side CSV export in the required 8-column format.
+    - Integrated with RTK Query and added full bilingual (EN/HI) translation support.
+- **Recent Refinements**: 
+  - **User Management**: Restricted user deletion to 'Viewer' accounts only and implemented a "Delete All Viewers" bulk action. Self-deletion and admin-account deletion are strictly prohibited at both the UI and API levels.
+  - **Scheme Data Management**: Migrated from manual "Add Scheme" entry to a high-efficiency bulk import/export system to streamline data entry for large datasets.
+  - **RBAC & API Security**: Secured all administrative endpoints and implemented navigation filtering based on user roles.
+  - **Pagination & Search**: Added paginated scheme listings in the Category detail view.
+  - **Mapping Filter Refinement**: Replaced category filters with department-based filtering on the mapping page and implemented dynamic scheme fetching.
+   - **UI Simplification**: Removed the bulk export button from the Schemes page to streamline the interface.
+   - **Single Scheme Export**: Implemented individual scheme export functionality with indigo branding and bilingual toast notifications.
+   - **Bug Fixes**: Resolved critical linter errors by correctly exporting and importing `useGetMeQuery` across dashboard pages.
+  - Fixed stale dashboard translation keys, localized audit log action labels, and resolved fatal Turbopack errors by disabling `reactCompiler` and migrating `middleware.ts` to `proxy.ts` per Next.js 16 conventions.
 - **Code Cleanup & Bug Fixes**: 
   - Fixed `(prisma.auditLog as any)` and `(prisma.setting as any)` casts across all API routes (`settings`, `stats`, `audit-logs`, `categories`, `departments`, `schemes`, `mappings`).
+  - Fixed missing `useGetMeQuery` exports and imports in `DepartmentsPage`, `SchemesPage`, and `CategoriesPage`.
   - Fixed session type error in `users` API route by correctly accessing `session.id`.
   - Removed unused imports and variables in `Dashboard` page.
   - Replaced hardcoded JWT secret with environment variable in `auth.ts`.
@@ -33,7 +57,7 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Tech Stack Setup (2.0)**: Next.js 14, Tailwind, Prisma, PostgreSQL, Redux Toolkit, and RTK Query integrated.
 
 - **UI/UX Responsiveness & Dark Mode (PRD 7.169)**: Fixed multiple responsiveness issues across all breakpoints (mobile, tablet, desktop). Elements like boxes, labels, text, and buttons are now properly aligned and contained. Fixed dark-mode hover contrast issues where item backgrounds would turn white, making text unreadable.
-- **Global Branding & Logo Replacement**: Replaced all company logos with the official `logo.jpeg`. Updated the login page, sidebar, mobile navigation, and footer with the new branding. Integrated the logo into the site metadata as the favicon/icon for a consistent professional look.
+- **Global Branding & Logo Replacement**: Replaced all company logos with the official `logo.jpeg`. Updated the login page, sidebar, and mobile navigation with the new branding. Integrated the logo into the site metadata as the favicon/icon for a consistent professional look.
 
 ---
 
@@ -71,6 +95,20 @@ This file tracks the implementation status of features defined in the PRD (`docs
   - Replaced mock budget distribution data with real real-time calculations from category mappings.
   - Maintained project integrity by preserving legacy files required for future reference.
 
+### 2026-01-27: RBAC, Security & Category Enhancements
+- **Role-Based Access Control (RBAC)**: Implemented a comprehensive RBAC system. 
+  - Created `/api/auth/me` to fetch current user profile and role.
+  - Added `isAdmin` flag to `DashboardLayout` for navigation filtering.
+  - Restricted UI elements (Add/Edit/Delete/Bulk buttons) in Departments, Schemes, Categories, and Mappings pages for non-admin users.
+  - Secured all administrative API routes with server-side role validation.
+- **Category Management Upgrade**: 
+  - Implemented pagination and search in `CategoryDetailModal` for managing large sets of schemes within a category.
+  - Added full i18n support for pagination controls in both English and Hindi.
+- **Bug Fixes & Stability**:
+  - Fixed a critical linter error where `useGetMeQuery` was not exported from the RTK Query API service.
+  - Corrected imports in `DepartmentsPage`, `SchemesPage`, and `CategoriesPage`.
+  - Updated `prd.md` and `ISSUE_TRACKING.md` to reflect these changes.
+
 ### 2026-01-26: Global Branding, Responsiveness & Dark Mode Fixes
 - **Global Logo Replacement**: Systematically replaced all instances of placeholder logos and old branding with the official `logo.jpeg`. Optimized sizing for different layouts: 120x120 for login, 40x40 for sidebar, 36x36 for mobile nav, and 48x48 for the footer.
 - **Metadata Branding**: Integrated the new logo into the Next.js metadata system (`icons`) in the root layout to ensure the brand identity is consistent in browser tabs and bookmarks.
@@ -84,6 +122,24 @@ This file tracks the implementation status of features defined in the PRD (`docs
 - **Notification System**: Integrated `sonner` for system-wide toast notifications. Resolved build errors by correctly importing `Toaster` in the root [layout.tsx](file:///c:/Users/Varsha Malik/OneDrive/Pictures/financialAPP/src/app/%5Blocale%5D/layout.tsx).
 - **Data Integrity**: Added a check to prevent deletion of departments that have existing schemes associated with them.
 - **Documentation**: Updated `docs/prd.md` and `ISSUE_TRACKING.md` to reflect the newly added department management and notification features.
+
+### 2026-01-27: Single Scheme Export & Translation Fixes
+- **Single Scheme Export**: Implemented the ability to export individual schemes directly from the list views.
+  - Extended `/api/schemes/export` to support an optional `schemeId` query parameter.
+  - Added "Download" buttons with indigo branding to Schemes page (desktop/mobile) and Category Detail modal.
+  - Implemented unique file naming using the scheme code (e.g., `Scheme_CODE_DATE.xlsx`).
+- **Translation Fix**: Resolved a console error where `Departments.exportSuccess` and `Departments.exportError` keys were missing in the English and Hindi locale files.
+- **Documentation**: Updated `docs/prd.md` and `ISSUE_TRACKING.md` to reflect the single scheme export feature.
+
+### 2026-01-27: Mapping Refinement & UI Simplification
+- **Mapping Refinement**: Replaced the category-based scheme filter on the Mapping page with a department-based filter using `useGetDepartmentsQuery`.
+- **Schemes Page**: Removed the bulk "Export Excel" button while preserving individual scheme export functionality.
+- **Viewer Role Optimization**:
+    - Removed **Mapping** from the navigation sidebar for viewers.
+    - Hidden **Edit** and **Delete** buttons from the Schemes page (desktop and mobile) for viewers.
+    - Removed **Quick Actions** and **Recent Administrative Activity** cards from the Dashboard for viewers.
+    - Added a fallback "Unauthorized Access" view for the Mapping page to secure direct URL navigation.
+- **Localization**: Added `allDepartments` and `filterByDepartment` translation keys to both English and Hindi locale files for the new Mapping page filter.
 
 ### 2026-01-26: Database Seeding & Data Integration
 - **Mock Data Seeding**: Updated `prisma/seed.js` to automatically populate the database from `docs/mock-data.json`. Implemented complex relational mapping for Users, Departments, Categories, Category Parts, and Schemes.

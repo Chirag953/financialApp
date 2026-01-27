@@ -15,11 +15,6 @@ import {
   User,
   Settings,
   ShieldCheck,
-  ExternalLink,
-  Github,
-  Mail,
-  Phone,
-  MapPin,
   AlertCircle
 } from 'lucide-react';
 import Image from 'next/image';
@@ -29,6 +24,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useGetMeQuery } from '@/store/services/api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,17 +47,19 @@ export default function DashboardLayout({
   const t = useTranslations('Navigation');
   const tf = useTranslations('Footer');
   const td = useTranslations('Departments');
+  const { data: userData } = useGetMeQuery();
+  const user = userData?.user;
 
   const navigation = [
     { name: t('dashboard'), href: '/dashboard', icon: LayoutDashboard },
     { name: t('departments'), href: '/dashboard/departments', icon: Building2 },
     { name: t('schemes'), href: '/dashboard/schemes', icon: FileText },
     { name: t('categories'), href: '/dashboard/categories', icon: Tags },
-    { name: t('mapping'), href: '/dashboard/mappings', icon: MapIcon },
-    { name: t('auditLogs'), href: '/dashboard/audit-logs', icon: History },
-    { name: t('users'), href: '/dashboard/users', icon: User },
-    { name: t('settings'), href: '/dashboard/settings', icon: Settings },
-  ];
+    { name: t('mapping'), href: '/dashboard/mappings', icon: MapIcon, role: 'ADMIN' },
+    { name: t('auditLogs'), href: '/dashboard/audit-logs', icon: History, role: 'ADMIN' },
+    { name: t('users'), href: '/dashboard/users', icon: User, role: 'ADMIN' },
+    { name: t('settings'), href: '/dashboard/settings', icon: Settings, role: 'ADMIN' },
+  ].filter(item => !item.role || user?.role === item.role);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -101,7 +99,7 @@ export default function DashboardLayout({
         <div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white dark:bg-slate-900 border-r dark:border-slate-800 shadow-xl">
           <div className="flex items-center justify-between h-16 px-6 border-b dark:border-slate-800 bg-gradient-to-br from-emerald-600 to-blue-700">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 overflow-hidden flex items-center justify-center">
                 <Image 
                   src="/logo.jpeg" 
                   alt="Scheme Mapping System" 
@@ -152,7 +150,7 @@ export default function DashboardLayout({
         <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-900 border-r dark:border-slate-800 shadow-sm">
           <div className="flex items-center h-16 px-6 border-b dark:border-slate-800 bg-gradient-to-br from-emerald-600 to-blue-700">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-md">
+              <div className="w-10 h-10 overflow-hidden flex items-center justify-center">
                 <Image 
                   src="/logo.jpeg" 
                   alt="Scheme Mapping System" 
@@ -201,7 +199,7 @@ export default function DashboardLayout({
               <Menu className="w-6 h-6" />
             </Button>
             <div className="lg:hidden flex items-center space-x-2">
-              <div className="w-9 h-9 rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-sm border dark:border-slate-800">
+              <div className="w-9 h-9 overflow-hidden flex items-center justify-center">
                 <Image 
                   src="/logo.jpeg" 
                   alt="Scheme Mapping System" 
@@ -220,11 +218,15 @@ export default function DashboardLayout({
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 md:mx-2" />
             <div className="flex items-center gap-3 pl-1">
               <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-none">System Admin</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">Administrator</span>
+                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 leading-none">
+                  {user?.name || 'Loading...'}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 uppercase tracking-wider">
+                  {user?.role === 'ADMIN' ? 'Administrator' : 'Viewer'}
+                </span>
               </div>
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center text-white text-xs md:text-sm font-bold shadow-sm ring-2 ring-white dark:ring-slate-800">
-                SA
+                {user?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || '??'}
               </div>
             </div>
           </div>
@@ -235,100 +237,14 @@ export default function DashboardLayout({
             {children}
           </div>
           
-          <footer className="mt-auto pt-8 md:pt-12 pb-6">
-            <div className="rounded-2xl md:rounded-3xl bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-6 md:p-8 lg:p-10 transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-900/60">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 mb-12">
-                <div className="space-y-6">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 rounded-xl bg-white overflow-hidden flex items-center justify-center shadow-lg border dark:border-slate-800">
-                      <Image 
-                        src="/logo.jpeg" 
-                        alt="Scheme Mapping System" 
-                        width={48} 
-                        height={48} 
-                        className="object-contain"
-                      />
-                    </div>
-                    <span className="text-xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-blue-600 dark:from-emerald-400 dark:to-blue-400">
-                      {tf('systemName')}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {tf('description')}
-                  </p>
-                  <div className="flex space-x-3">
-                    <a href="#" className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-slate-500 hover:bg-emerald-500 hover:text-white dark:hover:bg-emerald-600 transition-all duration-300">
-                      <Github className="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="space-y-6">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">{tf('quickLinks')}</h4>
-                  <ul className="grid grid-cols-1 gap-3 text-sm text-slate-500 dark:text-slate-400">
-                    {navigation.slice(0, 4).map((item) => (
-                      <li key={item.name}>
-                        <Link href={item.href as any} className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center group">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mr-2 group-hover:bg-emerald-500 transition-colors"></span>
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="space-y-6">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">{tf('support')}</h4>
-                  <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                    <li>
-                      <a href="#" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center group">
-                        <ExternalLink className="w-4 h-4 mr-2 opacity-50 group-hover:opacity-100" />
-                        {tf('privacy')}
-                      </a>
-                    </li>
-                    <li>
-                      <a href="#" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center group">
-                        <ExternalLink className="w-4 h-4 mr-2 opacity-50 group-hover:opacity-100" />
-                        {tf('terms')}
-                      </a>
-                    </li>
-                    <li className="pt-2">
-                      <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {tf('version')}
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="space-y-6">
-                  <h4 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">{tf('contact')}</h4>
-                  <ul className="space-y-4 text-sm text-slate-500 dark:text-slate-400">
-                    <li className="flex items-start">
-                      <Mail className="w-4 h-4 mr-3 mt-0.5 text-emerald-500" />
-                      <span className="break-all">{tf('email')}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <Phone className="w-4 h-4 mr-3 mt-0.5 text-emerald-500" />
-                      <span>{tf('phone')}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <MapPin className="w-4 h-4 mr-3 mt-0.5 text-emerald-500" />
-                      <span>{tf('address')}</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-              
-              <div className="pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-                <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
-                  {tf('copyright')}
-                </p>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800/50">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">System Live</span>
-                  </div>
-                </div>
+          <footer className="mt-auto py-6">
+            <div className="flex flex-col md:flex-row justify-center items-center gap-4 text-center">
+              <p className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                {tf('copyright')}
+              </p>
+              <div className="flex items-center space-x-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800/50">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">System Live</span>
               </div>
             </div>
           </footer>

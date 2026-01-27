@@ -11,17 +11,19 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tags, Plus, Check, X, Layers, Pencil, Trash2, Image as ImageIcon, CheckSquare, Square } from 'lucide-react';
+import { Tags, Plus, Check, X, Layers, Pencil, Trash2, Image as ImageIcon, CheckSquare, Square, FileText, Download } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
   useGetCategoriesQuery, 
+  useGetMeQuery,
   useDeleteCategoryMutation,
   useBulkDeleteCategoriesMutation
 } from '@/store/services/api';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from 'next-intl';
 import { CategoryDialog } from '@/components/categories/CategoryDialog';
+import { CategoryDetailModal } from '@/components/categories/CategoryDetailModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,8 +59,13 @@ export default function CategoriesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [viewingCategoryForSchemes, setViewingCategoryForSchemes] = useState<Category | null>(null);
+  const [exportingCategoryId, setExportingCategoryId] = useState<string | null>(null);
 
-  const { data: categories, isLoading } = useGetCategoriesQuery();
+  const { data: categories, isLoading } = useGetCategoriesQuery({});
+  const { data: userData } = useGetMeQuery();
+  const isAdmin = userData?.user?.role === 'ADMIN';
+
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
   const [bulkDeleteCategories, { isLoading: isBulkDeleting }] = useBulkDeleteCategoriesMutation();
 
@@ -113,6 +120,35 @@ export default function CategoriesPage() {
     setIsDialogOpen(true);
   };
 
+  const handleExport = async (category: Category) => {
+    if (!category?.id) return;
+    setExportingCategoryId(category.id);
+    try {
+      const params = new URLSearchParams({
+        categoryId: category.id
+      });
+      
+      const response = await fetch(`/api/schemes/export?${params.toString()}`);
+      if (!response.ok) throw new Error('Export failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${category.name}_Schemes_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success(tDept('exportSuccess') || 'Exported successfully');
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error(tDept('exportError') || 'Failed to export');
+    } finally {
+      setExportingCategoryId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -124,7 +160,7 @@ export default function CategoriesPage() {
             </h1>
             <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
           </div>
-          {selectedIds.length > 0 && (
+          {isAdmin && selectedIds.length > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border dark:border-slate-700">
               <span className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
                 {selectedIds.length} {tDept('selected')}
@@ -142,7 +178,7 @@ export default function CategoriesPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          {categories && categories.length > 0 && (
+          {isAdmin && categories && categories.length > 0 && (
             <Button 
               variant="outline" 
               size="sm"
@@ -153,13 +189,15 @@ export default function CategoriesPage() {
               {tDept('selectAll')}
             </Button>
           )}
-          <Button 
-            onClick={handleAddClick}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            {t('addCategory')}
-          </Button>
+          {isAdmin && (
+            <Button 
+              onClick={handleAddClick}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t('addCategory')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -230,15 +268,17 @@ export default function CategoriesPage() {
             >
               <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-800 pb-4 relative">
                 {/* Checkbox Overlay */}
-                <div className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${selectedIds.includes(category.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                  <Checkbox 
-                    checked={selectedIds.includes(category.id)}
-                    onCheckedChange={() => handleSelectOne(category.id)}
-                    className="bg-white border-slate-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 shadow-sm"
-                  />
-                </div>
+                {isAdmin && (
+                  <div className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${selectedIds.includes(category.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <Checkbox 
+                      checked={selectedIds.includes(category.id)}
+                      onCheckedChange={() => handleSelectOne(category.id)}
+                      className="bg-white border-slate-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 shadow-sm"
+                    />
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3 ml-6">
+                  <div className={`flex items-center space-x-3 ${isAdmin ? 'ml-6' : ''}`}>
                     {category.image ? (
                       <div className="w-10 h-10 rounded-lg overflow-hidden border bg-white flex-shrink-0">
                         <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
@@ -288,25 +328,48 @@ export default function CategoriesPage() {
                   )}
                 </div>
 
-                <div className="pt-6 flex gap-2">
+                <div className="pt-4 flex flex-col gap-2">
+                  <Button 
+                    variant="secondary" 
+                    size="sm" 
+                    className="w-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800"
+                    onClick={() => setViewingCategoryForSchemes(category)}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    {t('viewSchemes') || 'View Schemes'}
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1"
-                    onClick={() => handleEdit(category)}
+                    className="w-full border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    onClick={() => handleExport(category)}
+                    disabled={exportingCategoryId === category.id}
                   >
-                    <Pencil className="w-4 h-4 mr-2" />
-                    {t('edit')}
+                    <Download className="w-4 h-4 mr-2" />
+                    {tDept('exportExcel') || 'Download Excel'}
                   </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 flex-1"
-                    onClick={() => handleDeleteClick(category)}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t('delete')}
-                  </Button>
+                  {isAdmin && (
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEdit(category)}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        {t('edit')}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 flex-1"
+                        onClick={() => handleDeleteClick(category)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        {t('delete')}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -323,6 +386,11 @@ export default function CategoriesPage() {
           </div>
         )}
       </div>
+      <CategoryDetailModal 
+        category={viewingCategoryForSchemes} 
+        isOpen={!!viewingCategoryForSchemes} 
+        onClose={() => setViewingCategoryForSchemes(null)} 
+      />
     </div>
   );
 }
