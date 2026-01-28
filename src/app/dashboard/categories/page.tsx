@@ -11,7 +11,13 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tags, Plus, Check, X, Layers, Pencil, Trash2, Image as ImageIcon, CheckSquare, Square, FileText, Download } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tags, Plus, Check, X, Layers, Pencil, Trash2, Image as ImageIcon, CheckSquare, Square, FileText, Download, ChevronDown } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -21,7 +27,6 @@ import {
   useBulkDeleteCategoriesMutation
 } from '@/store/services/api';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations } from 'next-intl';
 import { CategoryDialog } from '@/components/categories/CategoryDialog';
 import { CategoryDetailModal } from '@/components/categories/CategoryDetailModal';
 import {
@@ -51,14 +56,13 @@ interface Category {
 }
 
 export default function CategoriesPage() {
-  const t = useTranslations('Categories');
-  const tDept = useTranslations('Departments');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const [viewingCategoryForSchemes, setViewingCategoryForSchemes] = useState<Category | null>(null);
   const [exportingCategoryId, setExportingCategoryId] = useState<string | null>(null);
 
@@ -85,13 +89,23 @@ export default function CategoriesPage() {
 
   const handleBulkDelete = async () => {
     try {
-      await bulkDeleteCategories({ ids: selectedIds }).unwrap();
-      toast.success(t('deleteSuccess') || 'Categories deleted successfully');
+      if (isDeleteAllDialogOpen) {
+        await bulkDeleteCategories({ mode: 'all' }).unwrap();
+        toast.success('All categories deleted successfully');
+      } else {
+        await bulkDeleteCategories({ ids: selectedIds }).unwrap();
+        toast.success(`${selectedIds.length} categories deleted successfully`);
+      }
       setSelectedIds([]);
       setIsBulkDeleteDialogOpen(false);
+      setIsDeleteAllDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingCategory') || 'Failed to delete categories');
+      toast.error(error?.data?.error || 'Failed to delete categories');
     }
+  };
+
+  const handleDeleteAllClick = () => {
+    setIsDeleteAllDialogOpen(true);
   };
 
   const handleEdit = (category: Category) => {
@@ -108,10 +122,10 @@ export default function CategoriesPage() {
     if (!categoryToDelete) return;
     try {
       await deleteCategory(categoryToDelete.id).unwrap();
-      toast.success(t('deleteSuccess') || 'Category deleted successfully');
+      toast.success('Category deleted successfully');
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingCategory') || 'Failed to delete category');
+      toast.error(error?.data?.error || 'Failed to delete category');
     }
   };
 
@@ -140,10 +154,10 @@ export default function CategoriesPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success(tDept('exportSuccess') || 'Exported successfully');
+      toast.success('Exported successfully');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error(tDept('exportError') || 'Failed to export');
+      toast.error('Failed to export');
     } finally {
       setExportingCategoryId(null);
     }
@@ -156,38 +170,57 @@ export default function CategoriesPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
               <Tags className="w-6 h-6 text-indigo-600" />
-              {t('title')}
+              Budget Categories
             </h1>
-            <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+            <p className="text-gray-500 dark:text-gray-400">Manage expense categories and their sub-parts</p>
           </div>
           {isAdmin && selectedIds.length > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border dark:border-slate-700">
-              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap">
-                {selectedIds.length} {tDept('selected')}
+              <span className="text-sm text-slate-600 dark:text-slate-300 font-medium whitespace-nowrap bg-white dark:bg-slate-700 px-2 py-0.5 rounded-full border dark:border-slate-600 shadow-sm">
+                {selectedIds.length} selected
               </span>
-              <Button 
-                variant="destructive" 
-                size="sm" 
-                className="h-8"
-                onClick={() => setIsBulkDeleteDialogOpen(true)}
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                {tDept('deleteSelected')}
-              </Button>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {isAdmin && categories && categories.length > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleSelectAll}
-              className="flex-1 sm:flex-none h-9"
-            >
-              {selectedIds.length === categories.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
-              {tDept('selectAll')}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 sm:flex-none items-center h-9 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-900/20"
+                  disabled={isBulkDeleting}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Bulk Actions
+                  <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem 
+                  className="text-slate-600 focus:text-slate-700 cursor-pointer"
+                  onClick={handleSelectAll}
+                >
+                  {selectedIds.length === categories.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                  {selectedIds.length === categories.length ? 'Deselect All' : 'Select All'}
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-700 cursor-pointer"
+                  disabled={selectedIds.length === 0}
+                  onClick={() => setIsBulkDeleteDialogOpen(true)}
+                >
+                  <CheckSquare className="w-4 h-4 mr-2" />
+                  Delete Selected
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-red-600 focus:text-red-700 cursor-pointer font-medium"
+                  onClick={handleDeleteAllClick}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           {isAdmin && (
             <Button 
@@ -195,7 +228,7 @@ export default function CategoriesPage() {
               className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
             >
               <Plus className="w-4 h-4 mr-2" />
-              {t('addCategory')}
+              Add Category
             </Button>
           )}
         </div>
@@ -210,22 +243,22 @@ export default function CategoriesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteCategory') || 'Delete Category'}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('confirmDeleteCategory') || 'Are you sure you want to delete this category? This action cannot be undone.'}
+              Are you sure you want to delete this category? This action cannot be undone.
             </AlertDialogDescription>
             <div className="mt-2 p-3 bg-slate-50 rounded border text-slate-900 font-medium">
               {categoryToDelete?.name}
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isDeleting}
             >
-              {isDeleting ? tDept('saving') : tDept('delete')}
+              {isDeleting ? 'Saving...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -234,19 +267,40 @@ export default function CategoriesPage() {
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteCategory') || 'Delete Category'}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Selected Categories</AlertDialogTitle>
             <AlertDialogDescription>
-              {tDept('confirmBulkDelete', { count: selectedIds.length })}
+              Are you sure you want to delete the selected categories? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isBulkDeleting}
             >
-              {isBulkDeleting ? tDept('saving') : tDept('delete')}
+              {isBulkDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete All Categories</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete all categories? This action cannot be undone and will remove all associated budget data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleBulkDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              disabled={isBulkDeleting}
+            >
+              {isBulkDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -291,24 +345,24 @@ export default function CategoriesPage() {
                     <CardTitle className="text-lg leading-tight">{category.name}</CardTitle>
                   </div>
                   <Badge variant={category.has_parts ? "default" : "secondary"}>
-                    {category.has_parts ? t('hasParts') : t('simple')}
+                    {category.has_parts ? "Multi-Part" : "Simple"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="pt-6 flex-1 flex flex-col">
                 <div className="space-y-4 flex-1">
                   <div>
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('configuration')}</span>
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</span>
                     <div className="flex items-center mt-2 text-sm">
                       {category.has_parts ? (
                         <div className="flex items-center text-green-600">
                           <Check className="w-4 h-4 mr-2" />
-                          {t('multiPartEnabled')}
+                          Multi-part enabled
                         </div>
                       ) : (
                         <div className="flex items-center text-gray-500">
                           <Check className="w-4 h-4 mr-2" />
-                          {t('directMapping')}
+                          Direct mapping
                         </div>
                       )}
                     </div>
@@ -316,11 +370,11 @@ export default function CategoriesPage() {
                   
                   {category.has_parts && (
                     <div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{t('definedParts')}</span>
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Defined Parts</span>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {category.parts.map((part) => (
                           <Badge key={part.id} variant="outline" className="bg-slate-50 dark:bg-slate-800/50">
-                            {t('part')} {part.part_name}
+                            Part {part.part_name}
                           </Badge>
                         ))}
                       </div>
@@ -336,7 +390,7 @@ export default function CategoriesPage() {
                     onClick={() => setViewingCategoryForSchemes(category)}
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    {t('viewSchemes') || 'View Schemes'}
+                    View Schemes
                   </Button>
                   <Button 
                     variant="outline" 
@@ -346,7 +400,7 @@ export default function CategoriesPage() {
                     disabled={exportingCategoryId === category.id}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    {tDept('exportExcel') || 'Download Excel'}
+                    Download Excel
                   </Button>
                   {isAdmin && (
                     <div className="flex gap-2">
@@ -357,7 +411,7 @@ export default function CategoriesPage() {
                         onClick={() => handleEdit(category)}
                       >
                         <Pencil className="w-4 h-4 mr-2" />
-                        {t('edit')}
+                        Edit
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -366,7 +420,7 @@ export default function CategoriesPage() {
                         onClick={() => handleDeleteClick(category)}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
-                        {t('delete')}
+                        Delete
                       </Button>
                     </div>
                   )}
@@ -377,11 +431,11 @@ export default function CategoriesPage() {
         ) : (
           <div className="col-span-full py-12 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border-2 border-dashed dark:border-slate-800">
             <Layers className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">{t('noCategories')}</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">{t('startAdding')}</p>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No categories found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Start by adding your first budget category.</p>
             <Button className="mt-4" variant="outline">
               <Plus className="w-4 h-4 mr-2" />
-              {t('addFirst')}
+              Add First Category
             </Button>
           </div>
         )}
@@ -394,3 +448,4 @@ export default function CategoriesPage() {
     </div>
   );
 }
+

@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useTranslations } from 'next-intl';
 import { useAddDepartmentMutation, useUpdateDepartmentMutation } from '@/store/services/api';
 import { useEffect } from 'react';
 
@@ -35,7 +34,6 @@ interface DepartmentDialogProps {
 }
 
 export function DepartmentDialog({ open, onOpenChange, department }: DepartmentDialogProps) {
-  const t = useTranslations('Departments');
   const [addDepartment, { isLoading: isAdding }] = useAddDepartmentMutation();
   const [updateDepartment, { isLoading: isUpdating }] = useUpdateDepartmentMutation();
   const isLoading = isAdding || isUpdating;
@@ -85,11 +83,11 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{department ? t('editDept') : t('addDept')}</DialogTitle>
+          <DialogTitle>{department ? 'Edit Department' : 'Add Department'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('nameEn')}</Label>
+            <Label htmlFor="name">Department Name</Label>
             <Input
               id="name"
               {...register('name')}
@@ -100,15 +98,6 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
               <p className="text-xs text-red-500">{errors.name.message}</p>
             )}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="nameHn">{t('nameHn')}</Label>
-            <Input
-              id="nameHn"
-              {...register('nameHn')}
-              placeholder="उदा. वित्त विभाग"
-              className="font-hindi"
-            />
-          </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2">
             <Button
               type="button"
@@ -116,10 +105,10 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
               onClick={() => onOpenChange(false)}
               className="w-full sm:w-auto"
             >
-              {t('cancel')}
+              Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? t('saving') : t('save')}
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>
@@ -127,3 +116,4 @@ export function DepartmentDialog({ open, onOpenChange, department }: DepartmentD
     </Dialog>
   );
 }
+

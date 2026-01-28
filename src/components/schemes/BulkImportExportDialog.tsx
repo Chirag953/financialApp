@@ -17,11 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTranslations } from 'next-intl';
 import { useImportSchemesMutation, useGetDepartmentsQuery } from '@/store/services/api';
 import { toast } from 'sonner';
 import { Download, Upload, FileDown, Loader2, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 
 interface BulkImportExportDialogProps {
   open: boolean;
@@ -29,8 +28,6 @@ interface BulkImportExportDialogProps {
 }
 
 export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportDialogProps) {
-  const t = useTranslations('Schemes');
-  const tCommon = useTranslations('Departments');
   const [importSchemes, { isLoading: isImporting }] = useImportSchemesMutation();
   const { data: deptsData } = useGetDepartmentsQuery({ limit: 100 });
   const departments = deptsData?.departments || [];
@@ -64,7 +61,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
 
   const handleExport = () => {
     window.location.href = '/api/schemes/bulk-export';
-    toast.success(t('exportSuccess'));
+    toast.success('Schemes exported successfully');
     onOpenChange(false);
   };
 
@@ -76,7 +73,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
 
   const handleImport = async () => {
     if (!selectedFile) {
-      toast.error(t('uploadCSV'));
+      toast.error('Please upload a CSV file');
       return;
     }
 
@@ -90,10 +87,10 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
       const result = await importSchemes(formData).unwrap();
       setImportResult(result);
       setMode('summary');
-      toast.success(t('importSuccess', { successCount: result.successCount, errorCount: result.errorCount }));
+      toast.success(`Imported ${result.successCount} schemes successfully, ${result.errorCount} failed.`);
     } catch (error: any) {
       console.error('Import error:', error);
-      toast.error(error.data?.error || t('importError'));
+      toast.error(error.data?.error || 'Failed to import schemes');
     }
   };
 
@@ -111,7 +108,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
     }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{t('bulkImportExport')}</DialogTitle>
+          <DialogTitle>Bulk Import/Export</DialogTitle>
         </DialogHeader>
 
         {mode === 'options' && (
@@ -122,7 +119,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
               onClick={() => setMode('import')}
             >
               <Upload className="w-8 h-8 text-blue-600" />
-              <span className="font-semibold">{t('importSchemes')}</span>
+              <span className="font-semibold">Import Schemes</span>
             </Button>
             <Button 
               variant="outline" 
@@ -130,7 +127,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
               onClick={handleExport}
             >
               <Download className="w-8 h-8 text-green-600" />
-              <span className="font-semibold">{t('exportSchemes')}</span>
+              <span className="font-semibold">Export Schemes</span>
             </Button>
           </div>
         )}
@@ -142,15 +139,15 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
                 <Building2 className="w-12 h-12 text-slate-400" />
                 <div className="space-y-2">
                   <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-                    {t('noDepartmentsFound') || 'No Departments Found'}
+                    No Departments Found
                   </h4>
                   <p className="text-sm text-slate-500 dark:text-slate-400 max-w-[300px]">
-                    {t('addDeptFirst') || 'Please add at least one department before importing schemes.'}
+                    Please add at least one department before importing schemes.
                   </p>
                 </div>
                 <Link href="/dashboard/departments">
                   <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
-                    {tCommon('addDept') || 'Add Department'}
+                    Add Department
                   </Button>
                 </Link>
               </div>
@@ -158,10 +155,10 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
               <>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">{t('selectDeptForNew')}</Label>
+                    <Label className="text-sm font-semibold">Select Department for New Schemes</Label>
                     <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t('selectDept')} />
+                        <SelectValue placeholder="Select a department" />
                       </SelectTrigger>
                       <SelectContent>
                         {departments.map((dept: any) => (
@@ -179,10 +176,10 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
                         <FileDown className="w-5 h-5 text-blue-600 mt-0.5" />
                         <div className="space-y-1">
                           <p className="text-blue-900 dark:text-blue-100 font-medium">
-                            {t('downloadTemplate')}
+                            Download Template
                           </p>
                           <p className="text-blue-700/80 dark:text-blue-300/80 text-xs">
-                            {t('templateDescription')}
+                            Download the CSV template with the correct headers for importing schemes.
                           </p>
                         </div>
                       </div>
@@ -193,19 +190,19 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
                         onClick={handleDownloadTemplate}
                       >
                         <Download className="w-4 h-4 mr-2" />
-                        {t('downloadCSV')}
+                        Download CSV Template
                       </Button>
                     </div>
                   ) : (
                     <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-dashed text-center">
                       <p className="text-xs text-slate-500 italic">
-                        {t('selectDeptToDownload') || 'Select a department above to download the import template'}
+                        Select a department above to download the import template
                       </p>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">{t('uploadCSV')}</Label>
+                    <Label className="text-sm font-semibold">Upload CSV File</Label>
                     <div 
                       className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${
                         selectedFile 
@@ -219,7 +216,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {selectedFile ? selectedFile.name : t('clickToUpload') || 'Click to upload or drag and drop'}
+                          {selectedFile ? selectedFile.name : 'Click to upload or drag and drop'}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
                           CSV files only
@@ -245,9 +242,9 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
             <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-900/30 rounded-lg">
               <CheckCircle2 className="w-6 h-6 text-green-600" />
               <div>
-                <h4 className="font-semibold text-green-900 dark:text-green-100">{t('importSummary')}</h4>
+                <h4 className="font-semibold text-green-900 dark:text-green-100">Import Summary</h4>
                 <p className="text-sm text-green-700 dark:text-green-300">
-                  {t('importSuccess', { successCount: importResult.successCount, errorCount: importResult.errorCount })}
+                  Imported {importResult.successCount} schemes successfully, {importResult.errorCount} failed.
                 </p>
               </div>
             </div>
@@ -256,7 +253,7 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-red-600 font-medium text-sm">
                   <AlertCircle className="w-4 h-4" />
-                  {t('viewErrors')} ({importResult.errorCount})
+                  View Errors ({importResult.errorCount})
                 </div>
                 <div className="max-h-[200px] overflow-y-auto border rounded-md p-3 bg-red-50 dark:bg-red-900/10 space-y-1">
                   {importResult.errors.map((err, i) => (
@@ -272,24 +269,25 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
 
         <DialogFooter>
           {mode === 'options' ? (
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
           ) : mode === 'import' ? (
             <>
-              <Button variant="ghost" onClick={() => setMode('options')} disabled={isImporting}>{t('cancel')}</Button>
+              <Button variant="ghost" onClick={() => setMode('options')} disabled={isImporting}>Cancel</Button>
               <Button 
                 onClick={handleImport} 
                 disabled={isImporting || !selectedFile}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 {isImporting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {isImporting ? t('uploadProgress') : t('importSchemes')}
+                {isImporting ? 'Uploading...' : 'Import Schemes'}
               </Button>
             </>
           ) : (
-            <Button onClick={() => onOpenChange(false)} className="w-full">{t('close')}</Button>
+            <Button onClick={() => onOpenChange(false)} className="w-full">Close</Button>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+

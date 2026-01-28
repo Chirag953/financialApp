@@ -1,73 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "./lib/auth";
-import createMiddleware from 'next-intl/middleware';
-import { routing } from './i18n/routing';
-
-const intlMiddleware = createMiddleware(routing);
 
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 1. Handle i18n routing first
-  const response = intlMiddleware(request);
-
-  // If next-intl is already redirecting (e.g. to add locale prefix), follow that
-  if (response.status === 307 || response.status === 308) {
-    return response;
-  }
-
-  // 2. Define session
+  // Define session
   const session = request.cookies.get("session")?.value;
 
-  // 3. Get locale for redirects
-  const segments = pathname.split('/');
-  const localeFromPath = segments[1];
-  const isLocaleSupported = routing.locales.includes(localeFromPath as "en" | "hi");
-  const currentLocale = isLocaleSupported ? (localeFromPath as "en" | "hi") : routing.defaultLocale;
-  
-  const loginPath = `/${currentLocale}`;
-  const dashboardPath = `/${currentLocale}/dashboard`;
+  const loginPath = "/";
+  const dashboardPath = "/dashboard";
 
-  // 4. Auth Logic
-  const isDashboardPage = pathname.startsWith(`/${currentLocale}/dashboard`) || pathname.startsWith('/dashboard');
-
-  // Prevent redirect loops by checking if we are already on the login page
-  const isExactLocalePath = routing.locales.some(loc => pathname === `/${loc}` || pathname === `/${loc}/`);
-  const isLoginPage = isExactLocalePath || pathname === '/' || pathname === '';
+  // Auth Logic
+  const isDashboardPage = pathname.startsWith("/dashboard");
+  const isLoginPage = pathname === "/";
 
   if (isDashboardPage) {
     if (!session) {
-        return NextResponse.redirect(new URL(loginPath, request.url));
-      }
-
-      try {
-        const decoded = await decrypt(session);
-        if (!decoded) {
-          const redirectResponse = NextResponse.redirect(new URL(loginPath, request.url));
-          redirectResponse.cookies.set("session", "", { expires: new Date(0) });
-          return redirectResponse;
-        }
-        return response;
-      } catch (error) {
-        const redirectResponse = NextResponse.redirect(new URL(loginPath, request.url));
-        redirectResponse.cookies.set("session", "", { expires: new Date(0) });
-        return redirectResponse;
-      }
+      return NextResponse.redirect(new URL(loginPath, request.url));
     }
 
-    // Redirect to dashboard if already logged in and visiting login/root page
-    if (isLoginPage && session) {
-      try {
-        const decoded = await decrypt(session);
-        if (decoded) {
-          return NextResponse.redirect(new URL(dashboardPath, request.url));
-        }
-      } catch (error) {
+    try {
+      const decoded = await decrypt(session);
+      if (!decoded) {
+        const response = NextResponse.redirect(new URL(loginPath, request.url));
         response.cookies.set("session", "", { expires: new Date(0) });
+        return response;
       }
+      return NextResponse.next();
+    } catch (error) {
+      const response = NextResponse.redirect(new URL(loginPath, request.url));
+      response.cookies.set("session", "", { expires: new Date(0) });
+      return response;
     }
+  }
 
-  return response;
+  // Redirect to dashboard if already logged in and visiting login page
+  if (isLoginPage && session) {
+    try {
+      const decoded = await decrypt(session);
+      if (decoded) {
+        return NextResponse.redirect(new URL(dashboardPath, request.url));
+      }
+    } catch (error) {
+      const response = NextResponse.next();
+      response.cookies.set("session", "", { expires: new Date(0) });
+      return response;
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {

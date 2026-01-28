@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTranslations } from 'next-intl';
 import { useAddSchemeMutation, useUpdateSchemeMutation, useGetDepartmentsQuery } from '@/store/services/api';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -44,8 +43,6 @@ interface SchemeDialogProps {
 }
 
 export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) {
-  const t = useTranslations('Schemes');
-  const tCommon = useTranslations('Departments');
   const [addScheme, { isLoading: isAdding }] = useAddSchemeMutation();
   const [updateScheme, { isLoading: isUpdating }] = useUpdateSchemeMutation();
   const { data: deptsData } = useGetDepartmentsQuery({ limit: 100 });
@@ -97,10 +94,10 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
     try {
       if (scheme) {
         await updateScheme({ id: scheme.id, body: data }).unwrap();
-        toast.success(t('updateSuccess') || 'Scheme updated successfully');
+        toast.success('Scheme updated successfully');
       } else {
         await addScheme(data).unwrap();
-        toast.success(t('createSuccess') || 'Scheme created successfully');
+        toast.success('Scheme created successfully');
       }
       reset();
       onOpenChange(false);
@@ -116,12 +113,12 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>{scheme ? t('editScheme') : t('newScheme')}</DialogTitle>
+          <DialogTitle>{scheme ? 'Edit Scheme' : 'New Scheme'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="scheme_code">{t('code')}</Label>
+              <Label htmlFor="scheme_code">Scheme Code</Label>
               <Input
                 id="scheme_code"
                 {...register('scheme_code')}
@@ -134,7 +131,7 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scheme_name">{t('name')}</Label>
+              <Label htmlFor="scheme_name">Scheme Name</Label>
               <Input
                 id="scheme_name"
                 {...register('scheme_name')}
@@ -148,13 +145,13 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="department_id">{tCommon('title')}</Label>
+            <Label htmlFor="department_id">Department</Label>
             <Select
               onValueChange={(value) => setValue('department_id', value)}
               defaultValue={watch('department_id')}
             >
               <SelectTrigger className={errors.department_id ? 'border-red-500' : ''}>
-                <SelectValue placeholder={t('allDepartments')} />
+                <SelectValue placeholder="All Departments" />
               </SelectTrigger>
               <SelectContent>
                 {departments.map((dept: any) => (
@@ -171,7 +168,7 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="total_budget_provision">{t('totalBudget')}</Label>
+              <Label htmlFor="total_budget_provision">Total Budget</Label>
               <Input
                 id="total_budget_provision"
                 type="number"
@@ -180,7 +177,7 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="progressive_allotment">{t('allotment')}</Label>
+              <Label htmlFor="progressive_allotment">Allotment</Label>
               <Input
                 id="progressive_allotment"
                 type="number"
@@ -189,7 +186,7 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="actual_progressive_expenditure">{t('expenditure')}</Label>
+              <Label htmlFor="actual_progressive_expenditure">Expenditure</Label>
               <Input
                 id="actual_progressive_expenditure"
                 type="number"
@@ -198,7 +195,7 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="provisional_expenditure_current_month">{t('provExp')}</Label>
+              <Label htmlFor="provisional_expenditure_current_month">Provisional Exp.</Label>
               <Input
                 id="provisional_expenditure_current_month"
                 type="number"
@@ -215,10 +212,10 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               onClick={() => onOpenChange(false)}
               className="w-full sm:w-auto"
             >
-              {tCommon('cancel')}
+              Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? tCommon('saving') : tCommon('save')}
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>
@@ -226,3 +223,4 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
     </Dialog>
   );
 }
+

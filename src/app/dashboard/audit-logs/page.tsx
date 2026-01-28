@@ -15,10 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, History, User, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { useTranslations } from 'next-intl';
 
 export default function AuditLogsPage() {
-  const t = useTranslations('AuditLogs');
   const [page, setPage] = useState(1);
   const [isExporting, setIsExporting] = useState(false);
   const limit = 25;
@@ -61,12 +59,12 @@ export default function AuditLogsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Audit Logs</h1>
+          <p className="text-gray-500 dark:text-gray-400">View and track system activities and changes</p>
         </div>
         <Button variant="outline" onClick={handleExport} disabled={isExporting || logs.length === 0} className="w-full sm:w-auto justify-center h-10">
           <Download className="w-4 h-4 mr-2" />
-          {t('exportExcel')}
+          Download Excel
         </Button>
       </div>
 
@@ -74,7 +72,7 @@ export default function AuditLogsPage() {
         <CardHeader>
           <CardTitle className="text-lg font-medium flex items-center">
             <History className="w-5 h-5 mr-2 text-gray-400" />
-            {t('activityLog')}
+            Activity Log
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -83,11 +81,11 @@ export default function AuditLogsPage() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 dark:bg-slate-900">
-                  <TableHead className="w-45">{t('timestamp')}</TableHead>
-                  <TableHead className="w-37.5">{t('user')}</TableHead>
-                  <TableHead className="w-37.5">{t('action')}</TableHead>
-                  <TableHead className="w-30">{t('module')}</TableHead>
-                  <TableHead>{t('details')}</TableHead>
+                  <TableHead className="w-45">Timestamp</TableHead>
+                  <TableHead className="w-37.5">User</TableHead>
+                  <TableHead className="w-37.5">Action</TableHead>
+                  <TableHead className="w-30">Module</TableHead>
+                  <TableHead>Details</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -112,16 +110,16 @@ export default function AuditLogsPage() {
                           <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
                             <User className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                           </div>
-                          <span className="text-sm font-medium dark:text-slate-200">{log.user?.name || t('system')}</span>
+                          <span className="text-sm font-medium dark:text-slate-200">{log.user?.name || "System"}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`${getActionColor(log.action)} font-mono text-[10px]`}>
-                          {t.has(log.action) ? t(log.action) : log.action}
+                          {log.action}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="text-xs font-medium text-gray-600">{log.module || t('system')}</span>
+                        <span className="text-xs font-medium text-gray-600">{log.module || "System"}</span>
                       </TableCell>
                       <TableCell>
                         <div className="max-w-100 truncate text-xs text-gray-500" title={JSON.stringify(log.details)}>
@@ -133,7 +131,7 @@ export default function AuditLogsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-gray-500">
-                      {t('noLogs')}
+                      No activity logs found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -165,7 +163,7 @@ export default function AuditLogsPage() {
                         <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-full">
                           <User className="w-3 h-3 text-slate-500 dark:text-slate-400" />
                         </div>
-                        <span className="text-sm font-semibold dark:text-slate-200">{log.user?.name || t('system')}</span>
+                        <span className="text-sm font-semibold dark:text-slate-200">{log.user?.name || "System"}</span>
                       </div>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500">
                         {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -174,15 +172,15 @@ export default function AuditLogsPage() {
 
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className={`${getActionColor(log.action)} font-mono text-[10px]`}>
-                        {t.has(log.action) ? t(log.action) : log.action}
+                        {log.action}
                       </Badge>
                       <span className="text-[10px] font-medium px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded">
-                        {log.module || t('system')}
+                        {log.module || "System"}
                       </span>
                     </div>
 
                     <div className="text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2 rounded border border-slate-100 dark:border-slate-800">
-                      <div className="font-medium text-[10px] text-slate-400 dark:text-slate-500 uppercase mb-1">{t('details')}</div>
+                      <div className="font-medium text-[10px] text-slate-400 dark:text-slate-500 uppercase mb-1">Details</div>
                       <div className="line-clamp-2">
                         {typeof log.details === 'string' ? log.details : JSON.stringify(log.details)}
                       </div>
@@ -196,7 +194,7 @@ export default function AuditLogsPage() {
               ))
             ) : (
               <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border-2 border-dashed">
-                {t('noLogs')}
+                No activity logs found.
               </div>
             )}
           </div>
@@ -204,11 +202,11 @@ export default function AuditLogsPage() {
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 border-t gap-4 mt-4">
             <div className="text-sm text-gray-500 text-center sm:text-left order-2 sm:order-1">
-              {t('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {t('to')}{' '}
+              Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
               <span className="font-medium">
                 {Math.min(page * limit, pagination.total)}
               </span>{' '}
-              {t('of')} <span className="font-medium">{pagination.total}</span> {t('logs')}
+              of <span className="font-medium">{pagination.total}</span> logs
             </div>
             <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end order-1 sm:order-2">
               <Button
@@ -219,10 +217,10 @@ export default function AuditLogsPage() {
                 className="flex-1 sm:flex-none h-8 px-3"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                {t('previous')}
+                Previous
               </Button>
               <div className="text-sm font-medium min-w-[100px] text-center">
-                {t('pageOf', { current: page, total: pagination.totalPages })}
+                Page {page} of {pagination.totalPages}
               </div>
               <Button
                 variant="outline"
@@ -231,7 +229,7 @@ export default function AuditLogsPage() {
                 disabled={page === pagination.totalPages || isLoading || isFetching}
                 className="flex-1 sm:flex-none h-8 px-3"
               >
-                {t('next')}
+                Next
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
@@ -241,3 +239,4 @@ export default function AuditLogsPage() {
     </div>
   );
 }
+

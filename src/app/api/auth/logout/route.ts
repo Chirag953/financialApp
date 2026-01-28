@@ -5,3 +5,4 @@ export async function POST() {
   (await cookies()).set("session", "", { expires: new Date(0) });
   return NextResponse.json({ success: true });
 }
+

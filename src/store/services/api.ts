@@ -47,11 +47,19 @@ export const api = createApi({
       }),
       invalidatesTags: ['User'],
     }),
-    bulkDeleteUsers: builder.mutation<any, { mode: 'all_viewers' }>({
-      query: ({ mode }) => ({
-        url: `users?mode=${mode}`,
-        method: 'DELETE',
-      }),
+    bulkDeleteUsers: builder.mutation<any, { ids?: string[]; mode?: 'all_viewers' }>({
+      query: ({ ids, mode }) => {
+        let url = 'users?';
+        if (mode === 'all_viewers') {
+          url += 'mode=all_viewers';
+        } else if (ids && ids.length > 0) {
+          url += `ids=${ids.join(',')}`;
+        }
+        return {
+          url,
+          method: 'DELETE',
+        };
+      },
       invalidatesTags: ['User'],
     }),
     getDepartments: builder.query<any, { q?: string; page?: number; limit?: number }>({

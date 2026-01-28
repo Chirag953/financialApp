@@ -5,7 +5,6 @@ import { Building2, FileText, Clock, TrendingUp, IndianRupee } from 'lucide-reac
 import { Skeleton } from '@/components/ui/skeleton';
 import { useGetStatsQuery, useGetMeQuery } from '@/store/services/api';
 import { Progress } from '@/components/ui/progress';
-import { useTranslations } from 'next-intl';
 import { DashboardCharts } from '@/components/dashboard/Charts';
 
 interface Stat {
@@ -25,7 +24,6 @@ interface Activity {
 }
 
 export default function DashboardPage() {
-  const t = useTranslations('Dashboard');
   const { data, isLoading } = useGetStatsQuery();
   const { data: userData } = useGetMeQuery();
   const isAdmin = userData?.user?.role === 'ADMIN';
@@ -45,13 +43,13 @@ export default function DashboardPage() {
     return stat.value;
   };
 
-  const getStatTranslationKey = (name: string) => {
+  const getStatDisplayName = (name: string) => {
     switch (name) {
-      case 'Total Departments': return 'totalDepartments';
-      case 'Active Schemes': return 'activeSchemes';
-      case 'Total Budget': return 'totalBudget';
-      case 'Total Expenditure': return 'totalExpenditure';
-      default: return '';
+      case 'Total Departments': return 'Total Departments';
+      case 'Active Schemes': return 'Active Schemes';
+      case 'Total Budget': return 'Total Budget';
+      case 'Total Expenditure': return 'Total Expenditure';
+      default: return name;
     }
   };
 
@@ -68,8 +66,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400">{t('welcome')}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Dashboard Overview</h1>
+        <p className="text-gray-500 dark:text-gray-400">Welcome back, Admin. Here's what's happening today.</p>
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -91,7 +89,7 @@ export default function DashboardPage() {
             <Card key={stat.name}>
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
                 <CardTitle className="text-sm font-medium">
-                  {getStatTranslationKey(stat.name) ? t(getStatTranslationKey(stat.name)) : stat.name}
+                  {getStatDisplayName(stat.name)}
                 </CardTitle>
                 <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
                   {getIcon(stat.name)}
@@ -123,7 +121,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-lg font-semibold flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-primary" />
-              {t('budgetUtilization')}
+              Budget Utilization
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -136,7 +134,7 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-end">
                   <div>
-                    <p className="text-sm text-gray-500">{t('overallExpenditure')}</p>
+                    <p className="text-sm text-gray-500">Overall Expenditure</p>
                     <p className="text-2xl font-bold text-primary">
                       {(Number(budgetOverview?.percentage) || 0).toFixed(1)}%
                     </p>
@@ -149,11 +147,11 @@ export default function DashboardPage() {
                 <Progress value={budgetOverview?.percentage} className="h-3" />
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">{t('spent')}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Spent</p>
                     <p className="text-sm font-semibold">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(budgetOverview?.totalExpenditure)}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wider">{t('remaining')}</p>
+                    <p className="text-xs text-gray-500 uppercase tracking-wider">Remaining</p>
                     <p className="text-sm font-semibold">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(budgetOverview?.totalBudget - budgetOverview?.totalExpenditure)}</p>
                   </div>
                 </div>
@@ -165,7 +163,7 @@ export default function DashboardPage() {
         {isAdmin && (
           <Card className="flex flex-col">
             <CardHeader>
-              <CardTitle>{t('quickActions')}</CardTitle>
+              <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="flex-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
@@ -173,13 +171,13 @@ export default function DashboardPage() {
                   <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg group-hover:scale-110 transition-transform">
                     <Building2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <span className="text-sm font-medium dark:text-slate-400">{t('addDept')}</span>
+                  <span className="text-sm font-medium dark:text-slate-400">Add Dept</span>
                 </button>
                 <button className="flex flex-col items-center justify-center p-4 space-y-2 transition-colors border rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 group w-full h-full">
                   <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg group-hover:scale-110 transition-transform">
                     <FileText className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <span className="text-sm font-medium dark:text-slate-400">{t('newScheme')}</span>
+                  <span className="text-sm font-medium dark:text-slate-400">New Scheme</span>
                 </button>
               </div>
             </CardContent>
@@ -192,7 +190,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="text-lg font-semibold flex items-center">
               <Clock className="w-5 h-5 mr-2 text-gray-500" />
-              {t('recentActivity')}
+              Recent Administrative Activity
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -214,7 +212,7 @@ export default function DashboardPage() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 text-gray-500 text-sm">{t('noActivity')}</div>
+                <div className="text-center py-6 text-gray-500 text-sm">No recent activity.</div>
               )}
             </div>
           </CardContent>

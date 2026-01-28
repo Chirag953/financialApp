@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter, Pencil, Trash2, CheckSquare, Square, Upload } from 'lucide-react';
+import { Search, FileText, Download, ChevronLeft, ChevronRight, Filter, Pencil, Trash2, CheckSquare, Square, Upload, ChevronDown } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { 
@@ -22,8 +22,7 @@ import {
   useBulkDeleteSchemesMutation
 } from '@/store/services/api';
 import { useGetMeQuery } from '@/store/services/api';
-import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { 
   Select, 
   SelectContent, 
@@ -43,6 +42,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 interface Scheme {
@@ -62,8 +67,6 @@ interface Scheme {
 }
 
 export default function SchemesPage() {
-  const t = useTranslations('Schemes');
-  const tDept = useTranslations('Departments');
   const [search, setSearch] = useState('');
   const [deptId, setDeptId] = useState('all');
   const [page, setPage] = useState(1);
@@ -75,6 +78,7 @@ export default function SchemesPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isAllSelectedAcrossPages, setIsAllSelectedAcrossPages] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const limit = 25;
 
   const { data: userData } = useGetMeQuery();
@@ -133,22 +137,28 @@ export default function SchemesPage() {
 
   const handleBulkDelete = async () => {
     try {
-      if (isAllSelectedAcrossPages) {
+      if (isAllSelectedAcrossPages && isDeleteAllDialogOpen) {
         await bulkDeleteSchemes({ 
           mode: 'all', 
           q: search, 
           deptId: deptId === 'all' ? '' : deptId 
         }).unwrap();
+        toast.success('All schemes deleted successfully');
       } else {
         await bulkDeleteSchemes({ ids: selectedIds }).unwrap();
+        toast.success(`${selectedIds.length} schemes deleted successfully`);
       }
-      toast.success(t('deleteSuccess') || 'Schemes deleted successfully');
       setSelectedIds([]);
       setIsAllSelectedAcrossPages(false);
       setIsBulkDeleteDialogOpen(false);
+      setIsDeleteAllDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingScheme') || 'Failed to delete schemes');
+      toast.error(error?.data?.error || 'Failed to delete schemes');
     }
+  };
+
+  const handleDeleteAllClick = () => {
+    setIsDeleteAllDialogOpen(true);
   };
 
   const handleSingleExport = async (scheme: Scheme) => {
@@ -169,10 +179,10 @@ export default function SchemesPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success(tDept('exportSuccess') || 'Exported successfully');
+      toast.success('Exported successfully');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error(tDept('exportError') || 'Failed to export');
+      toast.error('Failed to export');
     }
   };
 
@@ -195,10 +205,10 @@ export default function SchemesPage() {
     if (!schemeToDelete) return;
     try {
       await deleteScheme(schemeToDelete.id).unwrap();
-      toast.success(t('deleteSuccess') || 'Scheme deleted successfully');
+      toast.success('Scheme deleted successfully');
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingScheme') || 'Failed to delete scheme');
+      toast.error(error?.data?.error || 'Failed to delete scheme');
     }
   };
 
@@ -214,15 +224,56 @@ export default function SchemesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Schemes</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage government schemes and their budget allocations.</p>
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
-            <Button className="flex-1 sm:flex-none items-center bg-blue-600 hover:bg-blue-700" onClick={() => setIsBulkImportExportOpen(true)}>
-              <Upload className="w-4 h-4 mr-2" />
-              {t('bulkImportExport')}
-            </Button>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 sm:flex-none items-center h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-900/20"
+                    disabled={isLoading || schemes.length === 0}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Bulk Actions
+                    <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem 
+                      className="text-slate-600 focus:text-slate-700 cursor-pointer"
+                      onClick={handleSelectAll}
+                    >
+                      {selectedIds.length === schemes.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                      {selectedIds.length === schemes.length ? 'Deselect Page' : 'Select Page'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-700 cursor-pointer"
+                      disabled={selectedIds.length === 0 && !isAllSelectedAcrossPages}
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                    >
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Delete Selected
+                    </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-700 cursor-pointer font-medium"
+                    disabled={schemes.length === 0}
+                    onClick={handleDeleteAllClick}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete All
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button className="flex-1 sm:flex-none items-center h-10 bg-blue-600 hover:bg-blue-700" onClick={() => setIsBulkImportExportOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" />
+                Bulk Import/Export
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -241,22 +292,46 @@ export default function SchemesPage() {
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteScheme') || 'Delete Scheme'}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Scheme</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('confirmDeleteScheme') || 'Are you sure you want to delete this scheme? This action cannot be undone.'}
+              Are you sure you want to delete this scheme? This action cannot be undone.
             </AlertDialogDescription>
             <div className="mt-2 p-3 bg-slate-50 rounded border text-slate-900 font-medium">
               {schemeToDelete?.scheme_code} - {schemeToDelete?.scheme_name}
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isDeleting}
             >
-              {isDeleting ? tDept('saving') : tDept('delete')}
+              {isDeleting ? 'Saving...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Delete All Schemes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-bold text-red-600">ALL</span> schemes? 
+              This action <span className="font-bold underline">cannot be undone</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setIsAllSelectedAcrossPages(true);
+                handleBulkDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isBulkDeleting ? 'Deleting...' : 'Yes, Delete All'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -265,19 +340,19 @@ export default function SchemesPage() {
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteScheme') || 'Delete Schemes'}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Selected Schemes</AlertDialogTitle>
             <AlertDialogDescription>
-              {tDept('confirmBulkDelete', { count: isAllSelectedAcrossPages ? pagination.total : selectedIds.length })}
+              Are you sure you want to delete the selected schemes? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{tDept('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isBulkDeleting}
             >
-              {isBulkDeleting ? tDept('saving') : tDept('delete')}
+              {isBulkDeleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -287,21 +362,12 @@ export default function SchemesPage() {
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+              <CardTitle className="text-lg font-medium">Schemes List</CardTitle>
               {isAdmin && (selectedIds.length > 0 || isAllSelectedAcrossPages) && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                  <span className="text-sm text-slate-500 font-medium">
-                    {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} {tDept('selected')}
+                  <span className="text-sm text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                    {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} selected
                   </span>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="h-8"
-                    onClick={() => setIsBulkDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    {tDept('deleteSelected')}
-                  </Button>
                 </div>
               )}
             </div>
@@ -310,7 +376,7 @@ export default function SchemesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder={t('searchPlaceholder')}
+                placeholder="Search by scheme code or name..."
                 value={search}
                 onChange={handleSearchChange}
                 className="pl-10"
@@ -321,11 +387,11 @@ export default function SchemesPage() {
                 <SelectTrigger>
                   <div className="flex items-center">
                     <Filter className="w-4 h-4 mr-2 text-gray-400" />
-                    <SelectValue placeholder={t('allDepartments')} />
+                    <SelectValue placeholder="All Departments" />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('allDepartments')}</SelectItem>
+                  <SelectItem value="all">All Departments</SelectItem>
                   {departments.map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id}>
                       {dept.name}
@@ -342,24 +408,24 @@ export default function SchemesPage() {
             <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
               {isAllSelectedAcrossPages ? (
                 <>
-                  <span>{tDept('allSelectedAcrossPages', { total: pagination.total })}</span>
+                  <span>All {pagination.total} schemes selected across all pages.</span>
                   <Button 
                     variant="link" 
                     className="h-auto p-0 text-blue-800 font-bold" 
                     onClick={() => { setIsAllSelectedAcrossPages(false); setSelectedIds([]); }}
                   >
-                    {tDept('clearSelection')}
+                    Clear selection
                   </Button>
                 </>
               ) : (
                 <>
-                  <span>{tDept('selectedAllOnPage', { count: schemes.length })}</span>
+                  <span>All {schemes.length} schemes on this page are selected.</span>
                   <Button 
                     variant="link" 
                     className="h-auto p-0 text-blue-800 font-bold" 
                     onClick={() => setIsAllSelectedAcrossPages(true)}
                   >
-                    {tDept('selectAllAcrossPages', { total: pagination.total })}
+                    Select all {pagination.total} schemes across all pages
                   </Button>
                 </>
               )}
@@ -370,24 +436,25 @@ export default function SchemesPage() {
           <div className="hidden lg:block rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-900">
-                  <TableHead className="w-10">
+                <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                  <TableHead className="w-14 px-4 text-center">
                     <Checkbox 
                       checked={isAllSelectedAcrossPages || (schemes.length > 0 && schemes.every((s: Scheme) => selectedIds.includes(s.id)))}
                       onCheckedChange={handleSelectAll}
-                      aria-label={tDept('selectAll')}
+                      aria-label="Select all"
+                      className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                   </TableHead>
-                  <TableHead className="w-30">{t('code')}</TableHead>
-                  <TableHead className="min-w-40">{t('name')}</TableHead>
-                  <TableHead className="min-w-30">{t('dept')}</TableHead>
-                  <TableHead className="text-right">{t('totalBudget')}</TableHead>
-                  <TableHead className="text-right">{t('allotment')}</TableHead>
-                  <TableHead className="text-right">{t('expenditure')}</TableHead>
-                  <TableHead className="text-right">{t('pctBudget')}</TableHead>
-                  <TableHead className="text-right">{t('pctActual')}</TableHead>
-                  <TableHead className="text-right">{t('provExp')}</TableHead>
-                  <TableHead className="text-right">{tDept('actions')}</TableHead>
+                  <TableHead className="w-30">Scheme Code</TableHead>
+                  <TableHead className="min-w-40">Scheme Name</TableHead>
+                  <TableHead className="min-w-30">Department</TableHead>
+                  <TableHead className="text-right">Total Budget</TableHead>
+                  <TableHead className="text-right">Allotment</TableHead>
+                  <TableHead className="text-right">Expenditure</TableHead>
+                  <TableHead className="text-right">% Budget</TableHead>
+                  <TableHead className="text-right">% Actual</TableHead>
+                  <TableHead className="text-right">Prov. Exp</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -403,11 +470,12 @@ export default function SchemesPage() {
                 ) : schemes.length > 0 ? (
                   schemes.map((scheme: Scheme) => (
                     <TableRow key={scheme.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(scheme.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
-                      <TableCell>
+                      <TableCell className="px-4 text-center">
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(scheme.id)}
                           onCheckedChange={() => handleSelectOne(scheme.id)}
                           aria-label={`Select ${scheme.scheme_name}`}
+                          className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
                       </TableCell>
                       <TableCell className="font-mono text-xs">{scheme.scheme_code}</TableCell>
@@ -444,7 +512,7 @@ export default function SchemesPage() {
                             variant="ghost" 
                             size="icon" 
                             className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20" 
-                            title={t('exportExcel')}
+                            title="Export Excel"
                             onClick={() => handleSingleExport(scheme)}
                           >
                             <Download className="w-4 h-4" />
@@ -455,7 +523,7 @@ export default function SchemesPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
-                                title={tDept('edit')}
+                                title="Edit"
                                 onClick={() => handleEdit(scheme)}
                               >
                                 <Pencil className="w-4 h-4" />
@@ -464,7 +532,7 @@ export default function SchemesPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                                title={tDept('delete')}
+                                title="Delete"
                                 onClick={() => handleDeleteClick(scheme)}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -478,7 +546,7 @@ export default function SchemesPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={11} className="text-center py-10 text-gray-500">
-                      {t('noSchemes')}
+                      No schemes found
                     </TableCell>
                   </TableRow>
                 )}
@@ -507,6 +575,7 @@ export default function SchemesPage() {
                       <Checkbox 
                         checked={isAllSelectedAcrossPages || selectedIds.includes(scheme.id)}
                         onCheckedChange={() => handleSelectOne(scheme.id)}
+                        className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                       />
                       <div className="font-mono text-[10px] font-bold px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-400">
                         {scheme.scheme_code}
@@ -564,19 +633,19 @@ export default function SchemesPage() {
 
                   <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-50">
                     <div className="space-y-1">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('totalBudget')}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Total Budget</p>
                       <p className="text-xs font-semibold">{formatCurrency(scheme.total_budget_provision)}</p>
                     </div>
                     <div className="space-y-1 text-right">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('expenditure')}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Expenditure</p>
                       <p className="text-xs font-bold text-blue-600">{formatCurrency(scheme.actual_progressive_expenditure)}</p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('allotment')}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Allotment</p>
                       <p className="text-xs">{formatCurrency(scheme.progressive_allotment)}</p>
                     </div>
                     <div className="space-y-1 text-right">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">{t('provExp')}</p>
+                      <p className="text-[10px] text-gray-500 uppercase tracking-wider">Prov. Exp</p>
                       <p className="text-xs">{formatCurrency(scheme.provisional_expenditure_current_month)}</p>
                     </div>
                   </div>
@@ -584,18 +653,18 @@ export default function SchemesPage() {
               ))
             ) : (
               <div className="text-center py-10 text-gray-500 border rounded-lg">
-                {t('noSchemes')}
+                No schemes found
               </div>
             )}
           </div>
 
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-sm text-gray-500 text-center sm:text-left">
-              {tDept('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {tDept('to')}{' '}
+              Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
               <span className="font-medium">
                 {Math.min(page * limit, pagination.total)}
               </span>{' '}
-              {tDept('of')} <span className="font-medium">{pagination.total}</span> {t('title').toLowerCase()}
+              of <span className="font-medium">{pagination.total}</span> schemes
             </div>
             <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
               <Button
@@ -606,10 +675,10 @@ export default function SchemesPage() {
                 className="flex-1 sm:flex-none h-8 px-3"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
-                {tDept('previous')}
+                Previous
               </Button>
               <div className="text-sm font-medium min-w-[100px] text-center">
-                {tDept('page')} {page} {tDept('of')} {pagination.totalPages}
+                Page {page} of {pagination.totalPages}
               </div>
               <Button
                 variant="outline"
@@ -618,7 +687,7 @@ export default function SchemesPage() {
                 disabled={page === pagination.totalPages || isLoading}
                 className="flex-1 sm:flex-none h-8 px-3"
               >
-                {tDept('next')}
+                Next
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </div>
@@ -628,3 +697,4 @@ export default function SchemesPage() {
     </div>
   );
 }
+

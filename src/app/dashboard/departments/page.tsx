@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Search, Building2, Download, ChevronLeft, ChevronRight, Eye, Pencil, Trash2, CheckSquare, Square, ChevronDown } from 'lucide-react';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from '@/components/ui/skeleton';
 import { exportToExcel } from '@/lib/export';
@@ -23,8 +23,7 @@ import {
   useBulkDeleteDepartmentsMutation 
 } from '@/store/services/api';
 import { useGetMeQuery } from '@/store/services/api';
-import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { DepartmentDialog } from '@/components/departments/DepartmentDialog';
 import {
   AlertDialog,
@@ -36,6 +35,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 interface Department {
@@ -57,8 +62,8 @@ export default function DepartmentsPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isAllSelectedAcrossPages, setIsAllSelectedAcrossPages] = useState(false);
   const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
   const limit = 25;
-  const t = useTranslations('Departments');
 
   const { data: userData } = useGetMeQuery();
   const isAdmin = userData?.user?.role === 'ADMIN';
@@ -83,7 +88,7 @@ export default function DepartmentsPage() {
     }
 
     const allOnPageIds = departments.map((d: Department) => d.id);
-    const areAllOnPageSelected = allOnPageIds.every(id => selectedIds.includes(id));
+    const areAllOnPageSelected = allOnPageIds.every((id: string) => selectedIds.includes(id));
 
     if (areAllOnPageSelected) {
       // Unselect all on current page
@@ -92,7 +97,7 @@ export default function DepartmentsPage() {
       // Select all on current page
       setSelectedIds(prev => {
         const newIds = [...prev];
-        allOnPageIds.forEach(id => {
+        allOnPageIds.forEach((id: string) => {
           if (!newIds.includes(id)) newIds.push(id);
         });
         return newIds;
@@ -117,25 +122,31 @@ export default function DepartmentsPage() {
 
   const handleBulkDelete = async () => {
     try {
-      if (isAllSelectedAcrossPages) {
+      if (isAllSelectedAcrossPages && isDeleteAllDialogOpen) {
         await bulkDeleteDepartments({ mode: 'all', q: search }).unwrap();
+        toast.success("All departments deleted successfully");
       } else {
         await bulkDeleteDepartments({ ids: selectedIds }).unwrap();
+        toast.success(`${selectedIds.length} departments deleted successfully`);
       }
-      toast.success(t('deleteSuccess'));
       setSelectedIds([]);
       setIsAllSelectedAcrossPages(false);
       setIsBulkDeleteDialogOpen(false);
+      setIsDeleteAllDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingDept'));
+      toast.error(error?.data?.error || "Failed to delete departments");
     }
+  };
+
+  const handleDeleteAllClick = () => {
+    setIsDeleteAllDialogOpen(true);
   };
 
   const handleExport = () => {
     const exportData = departments.map((d: Department, i: number) => ({
-      [t('sNo')]: (page - 1) * limit + i + 1,
-      [t('nameEn')]: d.name,
-      [t('nameHn')]: d.nameHn,
+      "S.No": (page - 1) * limit + i + 1,
+      "Department Name (English)": d.name,
+      "Department Name (Hindi)": d.nameHn,
     }));
     exportToExcel(exportData, 'Departments_List');
   };
@@ -159,10 +170,10 @@ export default function DepartmentsPage() {
     if (!deptToDelete) return;
     try {
       await deleteDepartment(deptToDelete.id).unwrap();
-      toast.success(t('deleteSuccess'));
+      toast.success("Department deleted successfully");
       setIsDeleteDialogOpen(false);
     } catch (error: any) {
-      toast.error(error?.data?.error || t('errorDeletingDept'));
+      toast.error(error?.data?.error || "Failed to delete department");
     }
   };
 
@@ -170,19 +181,60 @@ export default function DepartmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
-          <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Departments</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage administrative departments and their details.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="flex-1 sm:flex-none items-center" onClick={handleExport} disabled={isLoading || departments.length === 0}>
+          <Button variant="outline" className="flex-1 sm:flex-none items-center h-10" onClick={handleExport} disabled={isLoading || departments.length === 0}>
             <Download className="w-4 h-4 mr-2" />
-            {t('exportExcel')}
+            Export
           </Button>
           {isAdmin && (
-            <Button className="flex-1 sm:flex-none items-center" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
-              <Building2 className="w-4 h-4 mr-2" />
-              {t('addDept')}
-            </Button>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 sm:flex-none items-center h-10 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900/30 dark:hover:bg-red-900/20"
+                    disabled={isLoading || departments.length === 0}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Bulk Actions
+                    <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem 
+                      className="text-slate-600 focus:text-slate-700 cursor-pointer"
+                      onClick={handleSelectAll}
+                    >
+                      {selectedIds.length === departments.length ? <CheckSquare className="w-4 h-4 mr-2" /> : <Square className="w-4 h-4 mr-2" />}
+                      {selectedIds.length === departments.length ? 'Deselect Page' : 'Select Page'}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-700 cursor-pointer"
+                      disabled={selectedIds.length === 0 && !isAllSelectedAcrossPages}
+                      onClick={() => setIsBulkDeleteDialogOpen(true)}
+                    >
+                      <CheckSquare className="w-4 h-4 mr-2" />
+                      Delete Selected
+                    </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-700 cursor-pointer font-medium"
+                    disabled={departments.length === 0}
+                    onClick={handleDeleteAllClick}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete All
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button className="flex-1 sm:flex-none items-center h-10" onClick={() => { setSelectedDept(null); setIsDialogOpen(true); }}>
+                <Building2 className="w-4 h-4 mr-2" />
+                Add Department
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -193,25 +245,50 @@ export default function DepartmentsPage() {
         department={selectedDept}
       />
 
+      <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-red-600">Delete All Departments</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <span className="font-bold text-red-600">ALL</span> departments? 
+              This will also delete all schemes and mappings associated with these departments.
+              This action <span className="font-bold underline">cannot be undone</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setIsAllSelectedAcrossPages(true);
+                handleBulkDelete();
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isBulkDeleting ? 'Deleting...' : 'Yes, Delete All'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteDept')}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Department</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('confirmDeleteDept')}
+              Are you sure you want to delete this department? This action cannot be undone.
             </AlertDialogDescription>
             <div className="mt-2 p-3 bg-slate-50 rounded border text-slate-900 font-medium">
               {deptToDelete?.name}
             </div>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleConfirmDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isDeleting}
             >
-              {isDeleting ? t('saving') : t('delete')}
+              {isDeleting ? "Saving..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -220,19 +297,19 @@ export default function DepartmentsPage() {
       <AlertDialog open={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t('deleteDept')}</AlertDialogTitle>
+            <AlertDialogTitle>Delete Selected Departments</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('confirmBulkDelete', { count: isAllSelectedAcrossPages ? pagination.total : selectedIds.length })}
+              Are you sure you want to delete the selected departments? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleBulkDelete}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isBulkDeleting}
             >
-              {isBulkDeleting ? t('saving') : t('delete')}
+              {isBulkDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -242,28 +319,19 @@ export default function DepartmentsPage() {
         <CardHeader className="pb-3">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <CardTitle className="text-lg font-medium">{t('listTitle')}</CardTitle>
+              <CardTitle className="text-lg font-medium">Department List</CardTitle>
               {isAdmin && (selectedIds.length > 0 || isAllSelectedAcrossPages) && (
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                  <span className="text-sm text-slate-500 font-medium">
-                    {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} {t('selected')}
+                  <span className="text-sm text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                    {isAllSelectedAcrossPages ? pagination.total : selectedIds.length} selected
                   </span>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="h-8"
-                    onClick={() => setIsBulkDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                    {t('deleteSelected')}
-                  </Button>
                 </div>
               )}
             </div>
             <div className="relative w-full md:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                placeholder={t('searchPlaceholder')}
+                placeholder="Search departments..."
                 value={search}
                 onChange={handleSearchChange}
                 className="pl-10"
@@ -277,24 +345,24 @@ export default function DepartmentsPage() {
             <div className="mb-4 p-2 bg-blue-50 border border-blue-100 rounded-md flex items-center justify-center gap-2 text-sm text-blue-700 animate-in fade-in slide-in-from-top-1">
               {isAllSelectedAcrossPages ? (
                 <>
-                  <span>{t('allSelectedAcrossPages', { total: pagination.total })}</span>
+                  <span>All {pagination.total} departments selected.</span>
                   <Button 
                     variant="link" 
                     className="h-auto p-0 text-blue-800 font-bold" 
                     onClick={() => { setIsAllSelectedAcrossPages(false); setSelectedIds([]); }}
                   >
-                    {t('clearSelection')}
+                    Clear selection
                   </Button>
                 </>
               ) : (
                 <>
-                  <span>{t('selectedAllOnPage', { count: departments.length })}</span>
+                  <span>Selected {departments.length} departments on this page.</span>
                   <Button 
                     variant="link" 
                     className="h-auto p-0 text-blue-800 font-bold" 
                     onClick={() => setIsAllSelectedAcrossPages(true)}
                   >
-                    {t('selectAllAcrossPages', { total: pagination.total })}
+                    Select all {pagination.total} departments
                   </Button>
                 </>
               )}
@@ -305,30 +373,27 @@ export default function DepartmentsPage() {
           <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-900">
-                  {isAdmin && (
-                    <TableHead className="w-12">
-                      <Checkbox 
-                        checked={isAllSelectedAcrossPages || (departments.length > 0 && departments.every(d => selectedIds.includes(d.id)))}
-                        onCheckedChange={handleSelectAll}
-                        aria-label={t('selectAll')}
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead className="w-20">{t('sNo')}</TableHead>
-                  <TableHead>{t('nameEn')}</TableHead>
-                  <TableHead>{t('nameHn')}</TableHead>
-                  <TableHead className="text-center">{t('schemesCount') || 'Schemes'}</TableHead>
-                  <TableHead className="text-right w-40">{t('actions')}</TableHead>
+                <TableRow className="bg-slate-50 dark:bg-slate-900/50">
+                  <TableHead className="w-14 px-4 text-center">
+                    <Checkbox 
+                      checked={isAllSelectedAcrossPages || (departments.length > 0 && departments.every((d: Department) => selectedIds.includes(d.id)))}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select All"
+                      className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                    />
+                  </TableHead>
+                  <TableHead className="w-20">S.No</TableHead>
+                  <TableHead>Department Name</TableHead>
+                  <TableHead className="text-center">Schemes</TableHead>
+                  <TableHead className="text-right w-40">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading || isFetching ? (
                   Array(5).fill(0).map((_, i) => (
                     <TableRow key={i}>
-                      {isAdmin && <TableCell><Skeleton className="h-4 w-4" /></TableCell>}
                       <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-64" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
@@ -337,18 +402,16 @@ export default function DepartmentsPage() {
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
                     <TableRow key={dept.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
-                      {isAdmin && (
-                        <TableCell>
-                          <Checkbox 
-                            checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
-                            onCheckedChange={() => handleSelectOne(dept.id)}
-                            aria-label={`Select ${dept.name}`}
-                          />
-                        </TableCell>
-                      )}
+                      <TableCell className="px-4 text-center">
+                        <Checkbox 
+                          checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
+                          onCheckedChange={() => handleSelectOne(dept.id)}
+                          aria-label={`Select ${dept.name}`}
+                          className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                        />
+                      </TableCell>
                       <TableCell className="font-medium text-gray-500">{(page - 1) * limit + index + 1}</TableCell>
                       <TableCell className="font-medium">{dept.name}</TableCell>
-                      <TableCell className="text-slate-600 font-hindi">{dept.nameHn}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 hover:bg-blue-200" : "text-gray-400"}>
                           {dept._count?.schemes || 0}
@@ -356,8 +419,8 @@ export default function DepartmentsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-1">
-                          <Link href={`/dashboard/departments/${dept.id}` as any}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20" title={t('viewDetails')}>
+                          <Link href={`/dashboard/departments/${dept.id}`}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="View Details">
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
@@ -367,7 +430,7 @@ export default function DepartmentsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
-                                title={t('edit')}
+                                title="Edit"
                                 onClick={() => handleEdit(dept)}
                               >
                                 <Pencil className="w-4 h-4" />
@@ -376,7 +439,7 @@ export default function DepartmentsPage() {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
-                                title={t('delete')}
+                                title="Delete"
                                 onClick={() => handleDeleteClick(dept)}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -390,7 +453,7 @@ export default function DepartmentsPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      {t('noDepartments')}
+                      No departments found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -406,7 +469,6 @@ export default function DepartmentsPage() {
                   <CardContent className="p-4 space-y-3">
                     <Skeleton className="h-4 w-1/4" />
                     <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-5 w-1/2" />
                     <div className="pt-2 flex justify-end">
                       <Skeleton className="h-9 w-24" />
                     </div>
@@ -422,22 +484,22 @@ export default function DepartmentsPage() {
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
                           onCheckedChange={() => handleSelectOne(dept.id)}
+                          className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
                         <span className="text-xs font-medium text-slate-400">#{(page - 1) * limit + index + 1}</span>
                       </div>
                       <div className="flex space-x-1">
-                        <Link href={`/dashboard/departments/${dept.id}` as any}>
+                        <Link href={`/dashboard/departments/${dept.id}`}>
                           <Button variant="outline" size="sm" className="h-8 px-2">
                             <Eye className="w-3.5 h-3.5 mr-1" />
-                            {t('viewDetails')}
+                            View Details
                           </Button>
                         </Link>
                       </div>
                     </div>
                     <h3 className="font-bold text-slate-900 mb-1">{dept.name}</h3>
-                    <p className="text-sm text-slate-600 font-hindi mb-2">{dept.nameHn}</p>
                     <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xs text-slate-500">{t('schemesCount') || 'Schemes'}:</span>
+                      <span className="text-xs text-slate-500">Schemes:</span>
                       <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 h-5 text-[10px]" : "text-gray-400 h-5 text-[10px]"}>
                         {dept._count?.schemes || 0}
                       </Badge>
@@ -450,7 +512,7 @@ export default function DepartmentsPage() {
                         onClick={() => handleEdit(dept)}
                       >
                         <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                        {t('edit')}
+                        Edit
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -459,7 +521,7 @@ export default function DepartmentsPage() {
                         onClick={() => handleDeleteClick(dept)}
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                        {t('delete')}
+                        Delete
                       </Button>
                     </div>
                   </CardContent>
@@ -467,7 +529,7 @@ export default function DepartmentsPage() {
               ))
             ) : (
               <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border-2 border-dashed">
-                {t('noDepartments')}
+                No departments found.
               </div>
             )}
           </div>
@@ -475,40 +537,41 @@ export default function DepartmentsPage() {
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 border-t gap-4">
             <div className="text-sm text-gray-500 text-center sm:text-left">
-              {t('showing')} <span className="font-medium">{(page - 1) * limit + 1}</span> {t('to')}{' '}
-              <span className="font-medium">
-                {Math.min(page * limit, pagination.total)}
-              </span>{' '}
-              {t('of')} <span className="font-medium">{pagination.total}</span> {t('title').toLowerCase()}
+            Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
+            <span className="font-medium">
+              {Math.min(page * limit, pagination.total)}
+            </span>{' '}
+            of <span className="font-medium">{pagination.total}</span> departments
+          </div>
+          <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading || isFetching}
+              className="flex-1 sm:flex-none"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <div className="text-sm font-medium min-w-[100px] text-center">
+              Page {page} of {pagination.totalPages}
             </div>
-            <div className="flex items-center space-x-2 w-full sm:w-auto justify-center sm:justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || isLoading || isFetching}
-                className="flex-1 sm:flex-none"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                {t('previous')}
-              </Button>
-              <div className="text-sm font-medium min-w-[100px] text-center">
-                {t('page')} {page} {t('of')} {pagination.totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-                disabled={page === pagination.totalPages || isLoading || isFetching}
-                className="flex-1 sm:flex-none"
-              >
-                {t('next')}
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              disabled={page === pagination.totalPages || isLoading || isFetching}
+              className="flex-1 sm:flex-none"
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+

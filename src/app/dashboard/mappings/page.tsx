@@ -31,11 +31,9 @@ import {
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useTranslations } from 'next-intl';
 import { CategoryDetailModal } from '@/components/categories/CategoryDetailModal';
 
 export default function MappingPage() {
-  const t = useTranslations('Mappings');
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedPartId, setSelectedPartId] = useState<string>('');
@@ -102,8 +100,8 @@ export default function MappingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">{t('title')}</h1>
-        <p className="text-gray-500 dark:text-gray-400">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Scheme Mappings</h1>
+        <p className="text-gray-500 dark:text-gray-400">Manage budget category mappings for financial schemes</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -112,7 +110,7 @@ export default function MappingPage() {
           <CardHeader>
             <CardTitle className="text-lg font-medium flex items-center">
               <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center mr-2">1</span>
-              {t('selectScheme')}
+              Select Scheme
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -120,7 +118,7 @@ export default function MappingPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
-                  placeholder={t('searchScheme')}
+                  placeholder="Search schemes..."
                   value={schemeSearch}
                   onChange={(e) => setSchemeSearch(e.target.value)}
                   className="pl-10"
@@ -128,10 +126,10 @@ export default function MappingPage() {
               </div>
               <Select value={filterDeptId} onValueChange={setFilterDeptId}>
                 <SelectTrigger className="w-full bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                  <SelectValue placeholder={t('filterByDepartment')} />
+                  <SelectValue placeholder="Filter by department" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{t('allDepartments')}</SelectItem>
+                  <SelectItem value="all">All Departments</SelectItem>
                   {departments?.map((dept: any) => (
                     <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                   ))}
@@ -224,16 +222,16 @@ export default function MappingPage() {
                   <CardHeader>
                     <CardTitle className="text-lg font-medium flex items-center">
                       <span className="w-6 h-6 rounded-full bg-primary text-white text-xs flex items-center justify-center mr-2">2</span>
-                      {t('addNewMapping')}
+                      Add New Mapping
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                       <div className="flex-1 space-y-2">
-                        <label className="text-xs font-medium text-gray-500">{t('budgetCategory')}</label>
+                        <label className="text-xs font-medium text-gray-500">Budget Category</label>
                         <Select value={selectedCategoryId} onValueChange={(val) => { setSelectedCategoryId(val); setSelectedPartId(''); }}>
                           <SelectTrigger>
-                            <SelectValue placeholder={t('selectCategory')} />
+                            <SelectValue placeholder="Select a category" />
                           </SelectTrigger>
                           <SelectContent>
                             {categories?.map((cat: any) => (
@@ -245,14 +243,14 @@ export default function MappingPage() {
 
                       {selectedCategory?.has_parts && (
                         <div className="flex-1 space-y-2">
-                          <label className="text-xs font-medium text-gray-500">{t('categoryPart')}</label>
+                          <label className="text-xs font-medium text-gray-500">Category Part</label>
                           <Select value={selectedPartId} onValueChange={setSelectedPartId}>
                             <SelectTrigger>
-                              <SelectValue placeholder={t('selectPart')} />
+                              <SelectValue placeholder="Select a part (optional)" />
                             </SelectTrigger>
                             <SelectContent>
                               {selectedCategory.parts.map((part: any) => (
-                                <SelectItem key={part.id} value={part.id}>{t('partLabel', { name: part.part_name })}</SelectItem>
+                                <SelectItem key={part.id} value={part.id}>{part.part_name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -265,7 +263,7 @@ export default function MappingPage() {
                         className="w-full md:w-auto"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        {t('addMapping')}
+                        Add Mapping
                       </Button>
                     </div>
                   </CardContent>
@@ -274,7 +272,7 @@ export default function MappingPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium">{t('existingMappings')}</CardTitle>
+                  <CardTitle className="text-lg font-medium">Existing Mappings</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {/* Desktop Table View */}
@@ -282,9 +280,9 @@ export default function MappingPage() {
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-slate-50 dark:bg-slate-900">
-                          <TableHead>{t('category')}</TableHead>
-                          <TableHead>{t('part')}</TableHead>
-                          {isAdmin && <TableHead className="text-right">{t('actions')}</TableHead>}
+                          <TableHead>Category</TableHead>
+                          <TableHead>Part</TableHead>
+                          {isAdmin && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -296,7 +294,7 @@ export default function MappingPage() {
                               <TableCell className="font-medium">{mapping.category.name}</TableCell>
                               <TableCell>
                                 {mapping.part ? (
-                                  <Badge variant="outline">{t('partLabel', { name: mapping.part.part_name })}</Badge>
+                                  <Badge variant="outline">{mapping.part.part_name}</Badge>
                                 ) : (
                                   <span className="text-gray-400 text-xs">N/A</span>
                                 )}
@@ -318,7 +316,7 @@ export default function MappingPage() {
                         ) : (
                           <TableRow>
                             <TableCell colSpan={isAdmin ? 3 : 2} className="h-24 text-center text-gray-500">
-                              {t('noMappings')}
+                              No mappings found for this scheme.
                             </TableCell>
                           </TableRow>
                         )}
@@ -337,7 +335,7 @@ export default function MappingPage() {
                             <div className="font-semibold text-sm dark:text-slate-200">{mapping.category.name}</div>
                             {mapping.part && (
                               <div className="mt-1">
-                                <Badge variant="outline" className="text-[10px] h-5">{t('partLabel', { name: mapping.part.part_name })}</Badge>
+                                <Badge variant="outline" className="text-[10px] h-5">{mapping.part.part_name}</Badge>
                               </div>
                             )}
                           </div>
@@ -355,7 +353,7 @@ export default function MappingPage() {
                       ))
                     ) : (
                       <div className="text-center py-6 text-gray-400 text-sm bg-slate-50 rounded-lg border-2 border-dashed">
-                        {t('noMappings')}
+                        No mappings found for this scheme.
                       </div>
                     )}
                   </div>
@@ -367,9 +365,9 @@ export default function MappingPage() {
               <div className="p-4 bg-white rounded-full shadow-sm mb-4">
                 <Info className="w-8 h-8 text-primary/40" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">{t('noSchemeSelected')}</h3>
+              <h3 className="text-lg font-medium text-gray-900">No Scheme Selected</h3>
               <p className="text-gray-500 text-center max-w-xs mt-2">
-                {t('selectSchemePrompt')}
+                Select a scheme from the left sidebar to view or manage its category mappings.
               </p>
             </div>
           )}
@@ -383,3 +381,4 @@ export default function MappingPage() {
     </div>
   );
 }
+

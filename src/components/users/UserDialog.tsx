@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTranslations } from 'next-intl';
 import { useAddUserMutation, useUpdateUserMutation } from '@/store/services/api';
 
 const userSchema = z.object({
@@ -40,8 +39,6 @@ interface UserDialogProps {
 }
 
 export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps) {
-  const t = useTranslations('Users');
-  const tCommon = useTranslations('Departments'); // Reusing saving/cancel/save
   const [addUser, { isLoading: isAdding }] = useAddUserMutation();
   const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
 
@@ -105,11 +102,11 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{editingUser ? t('editUser') : t('addUser')}</DialogTitle>
+          <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('name')}</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               {...register('name')}
@@ -120,7 +117,7 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">{t('email')}</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -133,7 +130,7 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">
-              {t('password')} {editingUser && <span className="text-xs font-normal text-gray-400">({t('passwordHint')})</span>}
+              Password {editingUser && <span className="text-xs font-normal text-gray-400">(Leave blank to keep current password)</span>}
             </Label>
             <Input
               id="password"
@@ -146,7 +143,7 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="role">{t('role')}</Label>
+            <Label htmlFor="role">Role</Label>
             <Select
               value={role}
               onValueChange={(val: any) => setValue('role', val)}
@@ -155,8 +152,8 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ADMIN">{t('admin')}</SelectItem>
-                <SelectItem value="VIEWER">{t('viewer')}</SelectItem>
+                <SelectItem value="ADMIN">Admin</SelectItem>
+                <SelectItem value="VIEWER">Viewer</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -167,10 +164,10 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
               onClick={() => onOpenChange(false)}
               className="w-full sm:w-auto"
             >
-              {t('cancel')}
+              Cancel
             </Button>
             <Button type="submit" disabled={isAdding || isUpdating} className="w-full sm:w-auto">
-              {isAdding || isUpdating ? tCommon('saving') : t('save')}
+              {isAdding || isUpdating ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>
@@ -178,3 +175,4 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
     </Dialog>
   );
 }
+

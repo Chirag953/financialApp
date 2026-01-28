@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Trash2, Image as ImageIcon, Smile } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useAddCategoryMutation, useUpdateCategoryMutation } from '@/store/services/api';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
@@ -39,8 +38,6 @@ interface CategoryDialogProps {
 }
 
 export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogProps) {
-  const t = useTranslations('Categories');
-  const tCommon = useTranslations('Departments'); // Reusing saving/cancel/save
   const [addCategory, { isLoading: isAdding }] = useAddCategoryMutation();
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
   
@@ -104,10 +101,10 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
 
       if (category) {
         await updateCategory({ id: category.id, body: payload }).unwrap();
-        toast.success(t('updateSuccess') || 'Category updated successfully');
+        toast.success('Category updated successfully');
       } else {
         await addCategory(payload).unwrap();
-        toast.success(t('createSuccess') || 'Category created successfully');
+        toast.success('Category created successfully');
       }
       reset();
       onOpenChange(false);
@@ -125,11 +122,11 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md overflow-y-auto max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>{category ? t('editCategory') || 'Edit Category' : t('addCategory')}</DialogTitle>
+          <DialogTitle>{category ? 'Edit Category' : 'Add Category'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="name">{t('configuration')}</Label>
+            <Label htmlFor="name">Configuration Name</Label>
             <Input
               id="name"
               {...register('name')}
@@ -145,7 +142,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
             <div className="space-y-2">
               <Label htmlFor="icon" className="flex items-center gap-2">
                 <Smile className="w-4 h-4" />
-                {t('icon') || 'Icon Name'}
+                Icon Name
               </Label>
               <Input
                 id="icon"
@@ -156,7 +153,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
             <div className="space-y-2">
               <Label htmlFor="image" className="flex items-center gap-2">
                 <ImageIcon className="w-4 h-4" />
-                {t('image') || 'Image URL'}
+                Image URL
               </Label>
               <Input
                 id="image"
@@ -167,7 +164,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
           </div>
 
           <div className="flex items-center justify-between">
-            <Label htmlFor="has_parts">{t('hasParts')}</Label>
+            <Label htmlFor="has_parts">Has Sub Categories / Parts</Label>
             <Switch
               id="has_parts"
               checked={hasParts}
@@ -183,7 +180,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
           {hasParts && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs font-semibold text-gray-400 uppercase">{t('definedParts')}</Label>
+                <Label className="text-xs font-semibold text-gray-400 uppercase">Defined Parts</Label>
                 <Button
                   type="button"
                   variant="outline"
@@ -192,7 +189,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
                   className="h-7 px-2"
                 >
                   <Plus className="w-3 h-3 mr-1" />
-                  {t('addSubCategory') || 'Add Sub Category'}
+                  Add Sub Category
                 </Button>
               </div>
               
@@ -201,7 +198,7 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
                   <div key={field.id} className="flex gap-2">
                     <Input
                       {...register(`parts.${index}.part_name` as const)}
-                      placeholder={`${t('part')} ${index + 1}`}
+                      placeholder={`Part ${index + 1}`}
                       className="flex-1"
                     />
                     <Button
@@ -227,10 +224,10 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
               onClick={() => onOpenChange(false)}
               className="w-full sm:w-auto"
             >
-              {tCommon('cancel')}
+              Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? tCommon('saving') : tCommon('save')}
+              {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
         </form>
@@ -238,3 +235,4 @@ export function CategoryDialog({ open, onOpenChange, category }: CategoryDialogP
     </Dialog>
   );
 }
+

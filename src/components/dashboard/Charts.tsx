@@ -14,7 +14,6 @@ import {
   Legend
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTranslations } from 'next-intl';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
@@ -24,8 +23,6 @@ interface ChartsProps {
 }
 
 export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProps) {
-  const t = useTranslations('Dashboard');
-
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -39,7 +36,7 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
       <Card className="col-span-4">
         <CardHeader>
-          <CardTitle>{t('topDeptBudget')}</CardTitle>
+          <CardTitle>Top Departments by Budget</CardTitle>
         </CardHeader>
         <CardContent className="pl-2">
           <div className="h-75 w-full">
@@ -93,11 +90,11 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
           <div className="flex justify-center mt-4 space-x-6 text-xs text-gray-500">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-blue-500 rounded-sm mr-2" />
-              {t('budget')}
+              Budget
             </div>
             <div className="flex items-center">
               <div className="w-3 h-3 bg-emerald-500 rounded-sm mr-2" />
-              {t('spent')}
+              Spent
             </div>
           </div>
         </CardContent>
@@ -105,7 +102,7 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
 
       <Card className="col-span-3">
         <CardHeader>
-          <CardTitle>{t('budgetByCategory')}</CardTitle>
+          <CardTitle>Budget by Category</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-75 w-full">
@@ -136,3 +133,4 @@ export function DashboardCharts({ topDepartments, budgetByCategory }: ChartsProp
     </div>
   );
 }
+

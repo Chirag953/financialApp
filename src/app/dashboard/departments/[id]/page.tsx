@@ -14,21 +14,19 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Building2, FileText, IndianRupee, TrendingUp, ArrowLeft } from 'lucide-react';
-import { Link } from '@/i18n/routing';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from 'next-intl';
 
 export default function DepartmentDetailPage() {
-  const t = useTranslations('DeptDetails');
   const { id } = useParams();
   const { data: department, isLoading, error } = useGetDepartmentByIdQuery(id as string);
 
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] space-y-4">
-        <p className="text-red-500 font-medium">{t('failedLoad')}</p>
+        <p className="text-red-500 font-medium">Failed to load department details</p>
         <Link href="/dashboard/departments">
-          <Button variant="outline">{t('backToDepts')}</Button>
+          <Button variant="outline">Back to Departments</Button>
         </Link>
       </div>
     );
@@ -63,7 +61,7 @@ export default function DepartmentDetailPage() {
               <Skeleton className="h-4 w-32 mt-1" />
             ) : (
               <p className="text-sm text-gray-500">
-                {t('activeSchemes', { count: department?.summary.schemeCount })}
+                {department?.summary.schemeCount} active schemes
               </p>
             )}
           </div>
@@ -73,7 +71,7 @@ export default function DepartmentDetailPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('totalBudget')}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Budget</CardTitle>
             <IndianRupee className="w-4 h-4 text-blue-600" />
           </CardHeader>
           <CardContent>
@@ -84,7 +82,7 @@ export default function DepartmentDetailPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('totalAllotment')}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Allotment</CardTitle>
             <FileText className="w-4 h-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -95,7 +93,7 @@ export default function DepartmentDetailPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('totalExpenditure')}</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Expenditure</CardTitle>
             <TrendingUp className="w-4 h-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -106,7 +104,7 @@ export default function DepartmentDetailPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('utilization')}</CardTitle>
+            <CardTitle className="text-sm font-medium">Utilization %</CardTitle>
             <TrendingUp className="w-4 h-4 text-purple-600" />
           </CardHeader>
           <CardContent className="space-y-2">
@@ -120,21 +118,21 @@ export default function DepartmentDetailPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('deptSchemes')}</CardTitle>
+          <CardTitle>Department Schemes</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead className="w-32">{t('schemeCode')}</TableHead>
-                  <TableHead className="min-w-60">{t('schemeName')}</TableHead>
-                  <TableHead className="text-right">{t('budget')}</TableHead>
-                  <TableHead className="text-right">{t('allotment')}</TableHead>
-                  <TableHead className="text-right">{t('expenditure')}</TableHead>
-                  <TableHead className="text-right">{t('pctUtil')}</TableHead>
-                  <TableHead className="text-right">{t('pctActual')}</TableHead>
-                  <TableHead className="text-right">{t('provExp')}</TableHead>
+                  <TableHead className="w-32">Scheme Code</TableHead>
+                  <TableHead className="min-w-60">Scheme Name</TableHead>
+                  <TableHead className="text-right">Budget</TableHead>
+                  <TableHead className="text-right">Allotment</TableHead>
+                  <TableHead className="text-right">Expenditure</TableHead>
+                  <TableHead className="text-right">% Budget</TableHead>
+                  <TableHead className="text-right">% Actual</TableHead>
+                  <TableHead className="text-right">Prov. Exp.</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,7 +180,7 @@ export default function DepartmentDetailPage() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={8} className="h-24 text-center text-gray-500">
-                      {t('noSchemes')}
+                      No schemes found for this department.
                     </TableCell>
                   </TableRow>
                 )}
