@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 const schemeSchema = z.object({
   scheme_code: z.string().length(13, "Scheme code must be exactly 13 digits"),
   scheme_name: z.string().min(1, "Scheme name is required"),
+  financial_year: z.string().optional(),
   total_budget_provision: z.number().min(0),
   progressive_allotment: z.number().min(0),
   actual_progressive_expenditure: z.number().min(0),
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
     const query = searchParams.get('q') || '';
     const deptId = searchParams.get('deptId') || '';
     const categoryId = searchParams.get('categoryId') || '';
+    const financialYear = searchParams.get('financialYear') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '25');
     const skip = (page - 1) * limit;
@@ -46,6 +48,10 @@ export async function GET(request: Request) {
 
     if (deptId) {
       where.AND.push({ department_id: deptId });
+    }
+
+    if (financialYear) {
+      where.AND.push({ financial_year: financialYear });
     }
 
     if (categoryId) {
@@ -160,84 +166,86 @@ export async function DELETE(request: Request) {
     const idsString = searchParams.get('ids');
     const query = searchParams.get('q') || '';
     const deptId = searchParams.get('deptId') || '';
+    const financialYear = searchParams.get('financialYear') || '';
 
     if (mode === 'all') {
       const where: any = {
-        OR: [
-          { scheme_name: { contains: query, mode: 'insensitive' } },
-          { scheme_code: { contains: query, mode: 'insensitive' } },
-        ],
+        AND: [
+          {
+            OR: [
+              { scheme_name: { contains: query, mode: 'insensitive' } },
+              { scheme_code: { contains: query, mode: 'insensitive' } },
+            ],
+          }
+        ]
       };
 
       if (deptId) {
-        where.department_id = deptId;
+        where.AND.push({ department_id: deptId });
       }
 
-      // Check for schemes with mappings first
-      const schemesWithMappings = await prisma.scheme.findMany({
-        where: {
-          ...where,
-          mappings: { some: {} }
-        },
-        select: { scheme_name: true }
+      if (financialYear) {
+        where.AND.push({ financial_year: financialYear });
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Get IDs of schemes to be deleted
+        const schemesToDelete = await tx.scheme.findMany({
+          where,
+          select: { id: true }
+        });
+        const schemeIds = schemesToDelete.map(s => s.id);
+
+        if (schemeIds.length === 0) return { count: 0 };
+
+        // 2. Delete all mappings for these schemes
+        await tx.mapping.deleteMany({
+          where: { scheme_id: { in: schemeIds } }
+        });
+
+        // 3. Delete schemes
+        const deleted = await tx.scheme.deleteMany({ where });
+        return deleted;
       });
-
-      if (schemesWithMappings.length > 0) {
-        const names = schemesWithMappings.slice(0, 5).map(s => s.scheme_name).join(', ');
-        const count = schemesWithMappings.length;
-        return NextResponse.json({ 
-          error: `Cannot delete schemes with existing mappings. ${count} scheme(s) like ${names} are already mapped to categories.` 
-        }, { status: 400 });
-      }
-
-      const deleted = await prisma.scheme.deleteMany({ where });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_SCHEMES",
+          action: "BULK_DELETE_SCHEMES_CASCADE",
           module: "SCHEMES",
-          details: { count: deleted.count, query, deptId },
+          details: { count: result.count, query, deptId, financialYear },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     } else if (idsString) {
       const ids = idsString.split(',');
 
-      // Check for schemes with mappings first
-      const schemesWithMappings = await prisma.scheme.findMany({
-        where: {
-          id: { in: ids },
-          mappings: { some: {} }
-        },
-        select: { scheme_name: true }
-      });
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Delete all mappings for these schemes
+        await tx.mapping.deleteMany({
+          where: { scheme_id: { in: ids } }
+        });
 
-      if (schemesWithMappings.length > 0) {
-        const names = schemesWithMappings.slice(0, 5).map(s => s.scheme_name).join(', ');
-        const count = schemesWithMappings.length;
-        return NextResponse.json({ 
-          error: `Cannot delete selected schemes. ${count} scheme(s) like ${names} are already mapped to categories.` 
-        }, { status: 400 });
-      }
-
-      const deleted = await prisma.scheme.deleteMany({
-        where: { id: { in: ids } }
+        // 2. Delete schemes
+        const deleted = await tx.scheme.deleteMany({
+          where: { id: { in: ids } }
+        });
+        return deleted;
       });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_SCHEMES",
+          action: "BULK_DELETE_SCHEMES_CASCADE",
           module: "SCHEMES",
-          details: { count: deleted.count, ids },
+          details: { count: result.count, ids },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     }
 
     return NextResponse.json({ error: "No IDs provided" }, { status: 400 });

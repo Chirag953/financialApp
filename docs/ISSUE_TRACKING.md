@@ -95,6 +95,15 @@ This file tracks the implementation status of features defined in the PRD (`docs
   - Replaced mock budget distribution data with real real-time calculations from category mappings.
   - Maintained project integrity by preserving legacy files required for future reference.
 
+### 2026-01-29: User Management & Scheme Access Refinement
+- **Cascading Deletion Fix**: Resolved the "Failed to delete viewers" error by adding `onDelete: Cascade` to the `AuditLog` relation in the Prisma schema. This ensures user records can be deleted without violating foreign key constraints in the audit logs.
+- **Enhanced Admin Permissions**: Updated user deletion logic to allow administrators to delete any account (including other admins) except their own. Removed the 'VIEWER'-only restriction for deletion.
+- **Restricted Scheme Creation**: Removed the "Add Scheme" functionality for non-admin users. 
+    - Hidden the "Add Scheme" button on the Schemes page for 'VIEWER' accounts.
+    - Restricted access to the scheme creation dialog.
+    - Removed selection checkboxes and bulk actions for viewers to simplify the read-only interface.
+- **Backend Role Enforcement**: Secured the `DELETE /api/users` and `DELETE /api/users/bulk` routes with server-side admin role validation, replacing legacy role-specific checks with broad administrator privileges.
+
 ### 2026-01-27: RBAC, Security & Category Enhancements
 - **Role-Based Access Control (RBAC)**: Implemented a comprehensive RBAC system. 
   - Created `/api/auth/me` to fetch current user profile and role.

@@ -109,9 +109,9 @@ export const api = createApi({
       },
       invalidatesTags: ['Department'],
     }),
-    getSchemes: builder.query<any, { q?: string; deptId?: string; categoryId?: string; page?: number; limit?: number }>({
-      query: ({ q = '', deptId = '', categoryId = '', page = 1, limit = 25 }) => 
-        `schemes?q=${q}&deptId=${deptId}&categoryId=${categoryId}&page=${page}&limit=${limit}`,
+    getSchemes: builder.query<any, { q?: string; deptId?: string; categoryId?: string; financialYear?: string; page?: number; limit?: number }>({
+      query: ({ q = '', deptId = '', categoryId = '', financialYear = '', page = 1, limit = 25 }) => 
+        `schemes?q=${q}&deptId=${deptId}&categoryId=${categoryId}&financialYear=${financialYear}&page=${page}&limit=${limit}`,
       providesTags: ['Scheme'],
     }),
     addScheme: builder.mutation<any, any>({
@@ -137,11 +137,11 @@ export const api = createApi({
       }),
       invalidatesTags: ['Scheme'],
     }),
-    bulkDeleteSchemes: builder.mutation<any, { ids?: string[]; mode?: 'all'; q?: string; deptId?: string }>({
-      query: ({ ids, mode, q, deptId }) => {
+    bulkDeleteSchemes: builder.mutation<any, { ids?: string[]; mode?: 'all'; q?: string; deptId?: string; financialYear?: string }>({
+      query: ({ ids, mode, q, deptId, financialYear }) => {
         let url = 'schemes?';
         if (mode === 'all') {
-          url += `mode=all&q=${encodeURIComponent(q || '')}&deptId=${deptId || ''}`;
+          url += `mode=all&q=${encodeURIComponent(q || '')}&deptId=${deptId || ''}&financialYear=${financialYear || ''}`;
         } else if (ids && ids.length > 0) {
           url += `ids=${ids.join(',')}`;
         }
@@ -246,20 +246,20 @@ export const {
   useUpdateSchemeMutation,
   useDeleteSchemeMutation,
   useBulkDeleteSchemesMutation,
-  useImportSchemesMutation,
-  useGetCategoriesQuery,
-  useAddCategoryMutation,
-  useUpdateCategoryMutation,
-  useDeleteCategoryMutation,
-  useBulkDeleteCategoriesMutation,
-  useGetMappingsQuery,
-  useAddMappingMutation,
-  useDeleteMappingMutation,
-  useGetStatsQuery,
-  useGetAuditLogsQuery,
-  useGetUsersQuery,
-  useAddUserMutation,
-  useUpdateUserMutation,
-  useDeleteUserMutation,
-  useBulkDeleteUsersMutation,
-} = api;
+    useImportSchemesMutation,
+    useGetCategoriesQuery,
+    useAddCategoryMutation,
+    useUpdateCategoryMutation,
+    useDeleteCategoryMutation,
+    useBulkDeleteCategoriesMutation,
+    useGetMappingsQuery,
+    useAddMappingMutation,
+    useDeleteMappingMutation,
+    useGetStatsQuery,
+    useGetAuditLogsQuery,
+    useGetUsersQuery,
+    useAddUserMutation,
+    useUpdateUserMutation,
+    useDeleteUserMutation,
+    useBulkDeleteUsersMutation,
+  } = api;

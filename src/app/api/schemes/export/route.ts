@@ -35,22 +35,36 @@ export async function GET(request: Request) {
 
     const schemes = await prisma.scheme.findMany({
       where,
-      include: { department: { select: { name: true } } },
+      include: { 
+        department: { select: { name: true } },
+        mappings: {
+          include: {
+            category: { select: { name: true } },
+            part: { select: { part_name: true } }
+          }
+        }
+      },
       orderBy: { scheme_code: 'asc' },
     });
 
     // Format data for Excel
-    const data = schemes.map(s => ({
-      'Scheme Code': s.scheme_code,
-      'Scheme Name': s.scheme_name,
-      'Department': s.department.name,
-      'Total Budget Provision': Number(s.total_budget_provision),
-      'Progressive Allotment': Number(s.progressive_allotment),
-      'Actual Progressive Expenditure': Number(s.actual_progressive_expenditure),
-      '% Budget Expenditure': Number(s.pct_budget_expenditure).toFixed(2) + '%',
-      '% Actual Expenditure': Number(s.pct_actual_expenditure).toFixed(2) + '%',
-      'Provisional Expenditure (Current Month)': Number(s.provisional_expenditure_current_month),
-    }));
+    const data = schemes.map(s => {
+      const mapping = s.mappings?.[0];
+      return {
+        'Scheme Code': s.scheme_code,
+        'Scheme Name': s.scheme_name,
+        'Department': s.department.name,
+        'Category': mapping?.category?.name || '-',
+        'Sub-Category': mapping?.part?.part_name || '-',
+        'Sub-Category 2': s.mappings?.[1]?.part?.part_name || '-',
+        'Total Budget Provision': Number(s.total_budget_provision),
+        'Progressive Allotment': Number(s.progressive_allotment),
+        'Actual Progressive Expenditure': Number(s.actual_progressive_expenditure),
+        '% Budget Expenditure': Number(s.pct_budget_expenditure).toFixed(2) + '%',
+        '% Actual Expenditure': Number(s.pct_actual_expenditure).toFixed(2) + '%',
+        'Provisional Expenditure (Current Month)': Number(s.provisional_expenditure_current_month),
+      };
+    });
 
     // Generate Excel
     const worksheet = XLSX.utils.json_to_sheet(data);

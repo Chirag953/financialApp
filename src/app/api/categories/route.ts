@@ -87,36 +87,56 @@ export async function DELETE(request: Request) {
 
     if (mode === 'all') {
       // Delete all categories
-      const deleted = await prisma.category.deleteMany({});
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Delete all mappings
+        await tx.mapping.deleteMany({});
+        // 2. Delete all category parts
+        await tx.categoryPart.deleteMany({});
+        // 3. Delete all categories
+        const deleted = await tx.category.deleteMany({});
+        return deleted;
+      });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_CATEGORIES",
+          action: "BULK_DELETE_CATEGORIES_CASCADE",
           module: "CATEGORIES",
-          details: { count: deleted.count },
+          details: { count: result.count },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     } else if (idsString) {
       const ids = idsString.split(',');
-      const deleted = await prisma.category.deleteMany({
-        where: { id: { in: ids } }
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Delete mappings for these categories
+        await tx.mapping.deleteMany({
+          where: { category_id: { in: ids } }
+        });
+        // 2. Delete parts for these categories
+        await tx.categoryPart.deleteMany({
+          where: { category_id: { in: ids } }
+        });
+        // 3. Delete categories
+        const deleted = await tx.category.deleteMany({
+          where: { id: { in: ids } }
+        });
+        return deleted;
       });
 
       // Audit Log
       await (prisma.auditLog as any).create({
         data: {
           userId: user.id,
-          action: "BULK_DELETE_CATEGORIES",
+          action: "BULK_DELETE_CATEGORIES_CASCADE",
           module: "CATEGORIES",
-          details: { count: deleted.count, ids },
+          details: { count: result.count, ids },
         },
       });
 
-      return NextResponse.json({ count: deleted.count });
+      return NextResponse.json({ count: result.count });
     }
 
     return NextResponse.json({ error: "No IDs provided" }, { status: 400 });

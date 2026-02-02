@@ -75,21 +75,45 @@
 ## 4. PROJECT STRUCTURE (Next.js App Router)
 ```text
 src/
-├── app/                # App Router (auth, dashboard, api)
-│   ├── [locale]/       # Bilingual route handling (Hindi/English)
-│   ├── (auth)/         # Login page
-│   ├── (dashboard)/    # Layout, Departments, Schemes, Categories, Mapping, Users, Settings
-│   └── api/            # REST API routes (with Zod validation)
-├── components/         # Shared components
-│   ├── ui/             # shadcn/ui components (installed via CLI)
-│   ├── layouts/        # Dashboard/Auth layout components
-│   ├── schemes/        # Scheme-specific complex components
-│   └── shared/         # Custom reusable components (Skeleton loaders, etc.)
-├── lib/                # Prisma client, auth helpers, Zod schemas, utils
-83→├── store/              # Redux Toolkit (RTK Query services, store)
-84→├── types/              # TypeScript interfaces
-85→└── proxy.ts            # Auth & Locale protection (Next.js 16/custom)
-86→``````
+├── app/                    # App Router (auth, dashboard, api)
+│   ├── api/                # REST API routes (with Zod validation)
+│   │   ├── audit-logs/     # Audit log fetch and export
+│   │   ├── auth/           # Login, logout, and profile endpoints
+│   │   ├── categories/     # Category management
+│   │   ├── dashboard/      # Dashboard statistics
+│   │   ├── departments/    # Department management
+│   │   ├── mappings/       # Scheme-category mapping
+│   │   ├── schemes/        # Scheme management (import, export, bulk)
+│   │   ├── settings/       # System settings
+│   │   └── users/          # User management
+│   ├── dashboard/          # Dashboard UI modules
+│   │   ├── audit-logs/     # Activity monitoring
+│   │   ├── categories/     # Category management
+│   │   ├── departments/    # Department listing and details
+│   │   ├── mappings/       # Scheme-category mapping interface
+│   │   ├── schemes/        # Government schemes management
+│   │   ├── settings/       # System configuration
+│   │   └── users/          # User management interface
+│   ├── globals.css         # Global styles
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Entry page
+├── components/             # Shared components
+│   ├── ui/                 # shadcn/ui components (installed via CLI)
+│   ├── categories/         # Category-specific dialogs and cards
+│   ├── dashboard/          # Dashboard charts and stat cards
+│   ├── departments/        # Department dialogs
+│   ├── schemes/            # Scheme dialogs and import/export modals
+│   └── users/              # User management dialogs
+├── lib/                    # Shared utilities and configuration
+│   ├── auth.ts             # Auth helpers (JWT verification)
+│   ├── db.ts               # Prisma client instance
+│   └── utils.ts            # UI utilities (cn, etc.)
+├── store/                  # Redux Toolkit (State Management)
+│   ├── services/           # RTK Query API services
+│   ├── slices/             # Redux state slices
+│   └── store.ts            # Redux store configuration
+└── types/                  # TypeScript interfaces
+``````
 
 ## 6. DATA & SEEDING
 - **Mock Data**: A comprehensive `mock-data.json` file in the `docs/` folder contains realistic data for 95 departments, budget categories, and multiple schemes per department.
@@ -98,82 +122,35 @@ src/
 
 ---
 
-## 7. RECENT REFINEMENTS (2026-01-27)
-- **Role-Based Access Control (RBAC)**: Implemented a robust RBAC system with 'ADMIN' and 'VIEWER' roles.
-  - **Admin Role**: Full access to all modules, including user management, system settings, audit logs, and all CRUD operations (Create, Edit, Delete, Bulk Operations).
-  - **Viewer Role**: Read-only access to core data (Departments, Schemes, Categories, Mappings). Admin-only actions and navigation sections (Users, Settings, Audit Logs) are dynamically hidden.
-- **Server-Side Security**: Added role-based validation to all API mutation endpoints (POST, PUT, PATCH, DELETE). Unauthorized requests from non-admin users are rejected with a 401/403 status.
-- **Enhanced Category Insights**: Upgraded the Categories module with a "View Schemes" detail modal. This view provides a paginated list of all schemes assigned to a specific category, complete with search functionality and department attribution.
-- **Navigation Filtering**: Dashboard sidebar now dynamically filters navigation items based on the current user's role, ensuring a clean and relevant interface for all users.
-- **User Profile Integration**: Added `/api/auth/me` endpoint and `getMe` RTK Query to fetch and display the current user's role and profile information across the dashboard.
-- **Bug Fixes & System Stability**: Resolved critical linter errors by correctly exporting and importing `useGetMeQuery` across dashboard pages, ensuring a stable development and build environment.
-- **Audit Log Integrity**: All administrative actions (including user management and bulk operations) are now strictly logged with user attribution and detailed change tracking.
-- **User Management Refinement**: Enhanced the Users management module to allow administrators to delete 'Viewer' accounts. Self-deletion and deletion of other 'Admin' accounts remain restricted to ensure system stability and security. Added a "Delete All Viewers" bulk action for efficient account cleanup.
-- **Role-Based Deletion Logic**: Implemented strict server-side validation to ensure only users with the 'VIEWER' role can be deleted, preventing accidental removal of administrative access.
-- **Single Scheme Export**: Added functionality to export individual schemes as Excel files from both the main Schemes page and the Category Detail modal. This includes unique file naming using scheme codes and bilingual success/error notifications.
-- **Mapping Refinement**: Replaced the category-based scheme filter on the Mapping page with a department-based filter, allowing administrators to browse and map schemes by department.
-- **UI Simplification**: Removed the bulk "Export Excel" button from the Schemes page to focus on individual scheme exports and bulk import/export workflows.
-- **Enhanced RBAC for Viewers**: Refined the 'VIEWER' role permissions by:
-  - Removing the Mapping page from the navigation sidebar.
-  - Hiding Edit and Delete action buttons on the Schemes page.
-  - Removing "Quick Actions" and "Recent Administrative Activity" from the Dashboard.
-  - Implementing page-level access control to prevent direct URL access to restricted modules.
+## 7. RECENT REFINEMENTS (2026-01-29)
+- **Cascading User Deletion**: Resolved a critical "Failed to delete viewers" error by implementing `onDelete: Cascade` on the `AuditLog` relation to the `User` model. This ensures that deleting a user account automatically cleans up their associated activity logs, maintaining database referential integrity.
+- **Admin Deletion Capabilities**: Enhanced administrative powers to allow an admin to delete any user account (including other administrators) except for their own active session. This provides complete user management control while preventing accidental self-lockout.
+- **Restricted Scheme Creation**: Secured the Government Schemes module by restricting the "Add Scheme" functionality exclusively to administrators. The creation button and associated dialog are now hidden from 'VIEWER' accounts.
+- **UI/UX Optimization for Non-Admins**: Further refined the read-only experience for viewers on the Schemes page by hiding bulk selection checkboxes and action menus, resulting in a cleaner, focused interface.
+- **Backend Role Enforcement**: Synchronized backend API endpoints for single and bulk user deletion to remove legacy role-based restrictions, now relying on the administrator's authenticated session to perform these high-privilege operations.
 
 ---
 
 ## 8. DATA MODEL (Prisma - Enhanced)
 ```prisma
-model Department {
-  id      String   @id @default(uuid())
-  name    String   @unique
-  schemes Scheme[]
-}
-
-model Scheme {
-  id                                    String    @id @default(uuid())
-  scheme_code                           String    @unique @db.VarChar(13)
-  scheme_name                           String
-  total_budget_provision               Decimal   @db.Decimal(15, 2)
-  progressive_allotment                Decimal   @db.Decimal(15, 2)
-  actual_progressive_expenditure       Decimal   @db.Decimal(15, 2)
-  pct_budget_expenditure               Decimal   @db.Decimal(5, 2)
-  pct_actual_expenditure               Decimal   @db.Decimal(5, 2)
-  provisional_expenditure_current_month Decimal   @db.Decimal(15, 2)
-  department_id                         String
-  department                            Department @relation(fields: [department_id], references: [id])
-  mappings                              Mapping[]
-}
-
-model Category {
-  id        String          @id @default(uuid())
-  name      String          @unique
-  has_parts Boolean         @default(false)
-  parts     CategoryPart[]
-  mappings  Mapping[]
-}
-
-model CategoryPart {
-  id          String   @id @default(uuid())
-  category_id String
-  category    Category @relation(fields: [category_id], references: [id])
-  part_name   String   // A, B, or C
-}
-
-model Mapping {
-  id          String        @id @default(uuid())
-  scheme_id   String
-  scheme      Scheme        @relation(fields: [scheme_id], references: [id])
-  category_id String
-  category    Category      @relation(fields: [category_id], references: [id])
-  part_id     String?
-  part        CategoryPart? @relation(fields: [part_id], references: [id])
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  name      String?
+  password  String
+  role      String     @default("VIEWER") // ADMIN or VIEWER
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  auditLogs AuditLog[]
 }
 
 model AuditLog {
   id         String   @id @default(uuid())
   userId     String
-  action     String   // e.g., "UPDATE_SCHEME", "CREATE_MAPPING"
-  details    Json     // Store old/new values
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     String   // e.g., "UPDATE_SCHEME", "DELETE_USER"
+  module     String   // e.g., "SCHEME_MGMT", "USER_MGMT"
+  details    Json?
   timestamp  DateTime @default(now())
 }
 ```

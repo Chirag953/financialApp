@@ -50,8 +50,6 @@ interface Category {
   id: string;
   name: string;
   has_parts: boolean;
-  icon?: string;
-  image?: string;
   parts: CategoryPart[];
 }
 
@@ -168,11 +166,11 @@ export default function CategoriesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-2">
-              <Tags className="w-6 h-6 text-indigo-600" />
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+              <Tags className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
               Budget Categories
             </h1>
-            <p className="text-gray-500 dark:text-gray-400">Manage expense categories and their sub-parts</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Manage expense categories and their sub-parts</p>
           </div>
           {isAdmin && selectedIds.length > 0 && (
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border dark:border-slate-700">
@@ -225,7 +223,7 @@ export default function CategoriesPage() {
           {isAdmin && (
             <Button 
               onClick={handleAddClick}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all duration-200 flex items-center flex-1 sm:flex-none justify-center h-9"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Category
@@ -308,43 +306,40 @@ export default function CategoriesPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {isLoading ? (
-          Array(3).fill(0).map((_, i) => (
-            <Card key={i}>
-              <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
-              <CardContent><Skeleton className="h-20 w-full" /></CardContent>
+          Array(6).fill(0).map((_, i) => (
+            <Card key={i} className="border-slate-200 dark:border-slate-800">
+              <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50"><Skeleton className="h-6 w-32" /></CardHeader>
+              <CardContent className="pt-6"><Skeleton className="h-20 w-full" /></CardContent>
             </Card>
           ))
         ) : categories?.length > 0 ? (
           categories.map((category: Category) => (
             <Card 
               key={category.id} 
-              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col ${selectedIds.includes(category.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30' : ''}`}
+              className={`group overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col border-slate-200 dark:border-slate-800 ${selectedIds.includes(category.id) ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' : 'hover:border-slate-300 dark:hover:border-slate-700'}`}
             >
-              <CardHeader className="bg-slate-50 dark:bg-slate-900 border-b dark:border-slate-800 pb-4 relative">
+              <CardHeader className="bg-slate-50/50 dark:bg-slate-800/50 border-b dark:border-slate-800 pb-4 relative">
                 {/* Checkbox Overlay */}
                 {isAdmin && (
-                  <div className={`absolute top-2 left-2 z-10 transition-opacity duration-200 ${selectedIds.includes(category.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <div className={`absolute top-3 left-3 z-10 transition-opacity duration-200 ${selectedIds.includes(category.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                     <Checkbox 
                       checked={selectedIds.includes(category.id)}
                       onCheckedChange={() => handleSelectOne(category.id)}
-                      className="bg-white border-slate-300 data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-600 shadow-sm"
+                      className="bg-white border-slate-300 data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600 shadow-sm"
                     />
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <div className={`flex items-center space-x-3 ${isAdmin ? 'ml-6' : ''}`}>
-                    {category.image ? (
-                      <div className="w-10 h-10 rounded-lg overflow-hidden border bg-white flex-shrink-0">
-                        <img src={category.image} alt={category.name} className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="p-2 bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-700">
-                        <Tags className="w-5 h-5 text-primary" />
-                      </div>
-                    )}
-                    <CardTitle className="text-lg leading-tight">{category.name}</CardTitle>
+                  <div className={`flex items-center space-x-3 ${isAdmin ? 'ml-8' : ''}`}>
+                    <div className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
+                      <Tags className="w-5 h-5 text-emerald-600 dark:text-emerald-500" />
+                    </div>
+                    <CardTitle className="text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight">{category.name}</CardTitle>
                   </div>
-                  <Badge variant={category.has_parts ? "default" : "secondary"}>
+                  <Badge 
+                    variant={category.has_parts ? "default" : "secondary"}
+                    className={category.has_parts ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}
+                  >
                     {category.has_parts ? "Multi-Part" : "Simple"}
                   </Badge>
                 </div>
@@ -352,15 +347,15 @@ export default function CategoriesPage() {
               <CardContent className="pt-6 flex-1 flex flex-col">
                 <div className="space-y-4 flex-1">
                   <div>
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Configuration</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configuration</span>
                     <div className="flex items-center mt-2 text-sm">
                       {category.has_parts ? (
-                        <div className="flex items-center text-green-600">
+                        <div className="flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
                           <Check className="w-4 h-4 mr-2" />
                           Multi-part enabled
                         </div>
                       ) : (
-                        <div className="flex items-center text-gray-500">
+                        <div className="flex items-center text-slate-500 dark:text-slate-400">
                           <Check className="w-4 h-4 mr-2" />
                           Direct mapping
                         </div>
@@ -370,10 +365,10 @@ export default function CategoriesPage() {
                   
                   {category.has_parts && (
                     <div>
-                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Defined Parts</span>
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Defined Parts</span>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
                         {category.parts.map((part) => (
-                          <Badge key={part.id} variant="outline" className="bg-slate-50 dark:bg-slate-800/50">
+                          <Badge key={part.id} variant="outline" className="bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
                             Part {part.part_name}
                           </Badge>
                         ))}
@@ -382,11 +377,11 @@ export default function CategoriesPage() {
                   )}
                 </div>
 
-                <div className="pt-4 flex flex-col gap-2">
+                <div className="pt-6 flex flex-col gap-2">
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    className="w-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800"
+                    className="w-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 border border-emerald-100/50 dark:border-emerald-800/50 font-medium"
                     onClick={() => setViewingCategoryForSchemes(category)}
                   >
                     <FileText className="w-4 h-4 mr-2" />
@@ -395,22 +390,22 @@ export default function CategoriesPage() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="w-full border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                    className="w-full border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
                     onClick={() => handleExport(category)}
                     disabled={exportingCategoryId === category.id}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Download Excel
+                    {exportingCategoryId === category.id ? 'Exporting...' : 'Download Excel'}
                   </Button>
                   {isAdmin && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-1">
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="flex-1"
+                        className="flex-1 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
                         onClick={() => handleEdit(category)}
                       >
-                        <Pencil className="w-4 h-4 mr-2" />
+                        <Pencil className="w-3.5 h-3.5 mr-2" />
                         Edit
                       </Button>
                       <Button 
@@ -419,7 +414,7 @@ export default function CategoriesPage() {
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 flex-1"
                         onClick={() => handleDeleteClick(category)}
                       >
-                        <Trash2 className="w-4 h-4 mr-2" />
+                        <Trash2 className="w-3.5 h-3.5 mr-2" />
                         Delete
                       </Button>
                     </div>
@@ -429,14 +424,18 @@ export default function CategoriesPage() {
             </Card>
           ))
         ) : (
-          <div className="col-span-full py-12 text-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border-2 border-dashed dark:border-slate-800">
-            <Layers className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No categories found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">Start by adding your first budget category.</p>
-            <Button className="mt-4" variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Add First Category
-            </Button>
+          <div className="col-span-full py-16 text-center bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="bg-slate-50 dark:bg-slate-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-slate-700">
+              <Layers className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">No categories found</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto">Start by adding your first budget category to organize your financial data.</p>
+            {isAdmin && (
+              <Button className="mt-6 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleAddClick}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add First Category
+              </Button>
+            )}
           </div>
         )}
       </div>

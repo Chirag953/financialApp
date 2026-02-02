@@ -40,6 +40,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const deptId = formData.get('deptId') as string;
+    const financialYear = formData.get('financialYear') as string;
 
     if (!file) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -102,6 +103,7 @@ export async function POST(request: Request) {
             where: { id: existingScheme.id },
             data: {
               scheme_name: validated.scheme_name,
+              financial_year: financialYear || existingScheme.financial_year,
               total_budget_provision: validated.total_budget_provision,
               progressive_allotment: validated.progressive_allotment,
               actual_progressive_expenditure: validated.actual_progressive_expenditure_upto_dec,
@@ -121,6 +123,7 @@ export async function POST(request: Request) {
             data: {
               scheme_code: validated.scheme_code,
               scheme_name: validated.scheme_name,
+              financial_year: financialYear || "2024-25",
               total_budget_provision: validated.total_budget_provision,
               progressive_allotment: validated.progressive_allotment,
               actual_progressive_expenditure: validated.actual_progressive_expenditure_upto_dec,

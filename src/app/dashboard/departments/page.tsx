@@ -120,9 +120,9 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = async (forceAll: boolean = false) => {
     try {
-      if (isAllSelectedAcrossPages && isDeleteAllDialogOpen) {
+      if (forceAll || (isAllSelectedAcrossPages && isDeleteAllDialogOpen)) {
         await bulkDeleteDepartments({ mode: 'all', q: search }).unwrap();
         toast.success("All departments deleted successfully");
       } else {
@@ -145,8 +145,7 @@ export default function DepartmentsPage() {
   const handleExport = () => {
     const exportData = departments.map((d: Department, i: number) => ({
       "S.No": (page - 1) * limit + i + 1,
-      "Department Name (English)": d.name,
-      "Department Name (Hindi)": d.nameHn,
+      "Department Name": d.name,
     }));
     exportToExcel(exportData, 'Departments_List');
   };
@@ -181,8 +180,8 @@ export default function DepartmentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Departments</h1>
-          <p className="text-gray-500 dark:text-gray-400">Manage administrative departments and their details.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Departments</h1>
+          <p className="text-slate-500 dark:text-slate-400">Manage administrative departments and their details.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1 sm:flex-none items-center h-10" onClick={handleExport} disabled={isLoading || departments.length === 0}>
@@ -259,8 +258,7 @@ export default function DepartmentsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={() => {
-                setIsAllSelectedAcrossPages(true);
-                handleBulkDelete();
+                handleBulkDelete(true);
               }}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -305,7 +303,7 @@ export default function DepartmentsPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={handleBulkDelete}
+              onClick={() => handleBulkDelete(false)}
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
               disabled={isBulkDeleting}
             >
@@ -329,7 +327,7 @@ export default function DepartmentsPage() {
               )}
             </div>
             <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Search departments..."
                 value={search}
@@ -370,57 +368,65 @@ export default function DepartmentsPage() {
           )}
 
           {/* Desktop Table View */}
-          <div className="hidden md:block rounded-md border">
+          <div className="hidden md:block rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-900/50">
-                  <TableHead className="w-14 px-4 text-center">
+                <TableRow className="bg-slate-50/50 dark:bg-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 border-b dark:border-slate-800">
+                  <TableHead className="w-[50px] px-4 text-center">
                     <Checkbox 
                       checked={isAllSelectedAcrossPages || (departments.length > 0 && departments.every((d: Department) => selectedIds.includes(d.id)))}
                       onCheckedChange={handleSelectAll}
                       aria-label="Select All"
-                      className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                      className="translate-y-[2px] border-slate-300 dark:border-slate-600"
                     />
                   </TableHead>
-                  <TableHead className="w-20">S.No</TableHead>
-                  <TableHead>Department Name</TableHead>
-                  <TableHead className="text-center">Schemes</TableHead>
-                  <TableHead className="text-right w-40">Actions</TableHead>
+                  <TableHead className="w-[80px] font-semibold text-slate-700 dark:text-slate-300">S.No</TableHead>
+                  <TableHead className="font-semibold text-slate-700 dark:text-slate-300">Department Name</TableHead>
+                  <TableHead className="text-center font-semibold text-slate-700 dark:text-slate-300">Schemes</TableHead>
+                  <TableHead className="text-right w-[150px] font-semibold text-slate-700 dark:text-slate-300 px-6">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading || isFetching ? (
                   Array(5).fill(0).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                    <TableRow key={i} className="border-b dark:border-slate-800">
+                      <TableCell className="px-4"><Skeleton className="h-4 w-4 mx-auto" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-8" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-64" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-12 mx-auto" /></TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
+                      <TableCell className="text-right px-6"><Skeleton className="h-8 w-24 ml-auto" /></TableCell>
                     </TableRow>
                   ))
                 ) : departments.length > 0 ? (
                   departments.map((dept: Department, index: number) => (
-                    <TableRow key={dept.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50/50 dark:bg-slate-800/50' : ''}`}>
+                    <TableRow 
+                      key={dept.id} 
+                      className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b dark:border-slate-800 ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : ''}`}
+                    >
                       <TableCell className="px-4 text-center">
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
                           onCheckedChange={() => handleSelectOne(dept.id)}
                           aria-label={`Select ${dept.name}`}
-                          className="translate-y-[2px] border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                          className="translate-y-[2px] border-slate-300 dark:border-slate-600"
                         />
                       </TableCell>
-                      <TableCell className="font-medium text-gray-500">{(page - 1) * limit + index + 1}</TableCell>
-                      <TableCell className="font-medium">{dept.name}</TableCell>
+                      <TableCell className="font-medium text-slate-500">{(page - 1) * limit + index + 1}</TableCell>
+                      <TableCell>
+                        <span className="font-semibold text-slate-900 dark:text-white leading-tight">{dept.name}</span>
+                      </TableCell>
                       <TableCell className="text-center">
-                        <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 hover:bg-blue-200" : "text-gray-400"}>
+                        <Badge 
+                          variant={dept._count?.schemes ? "secondary" : "outline"} 
+                          className={dept._count?.schemes ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-100 dark:border-blue-800 font-bold" : "text-slate-400 border-slate-200 dark:border-slate-800"}
+                        >
                           {dept._count?.schemes || 0}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end space-x-1">
+                      <TableCell className="text-right px-6">
+                        <div className="flex justify-end gap-1">
                           <Link href={`/dashboard/departments/${dept.id}`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20" title="View Details">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20" title="View Details">
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
@@ -429,7 +435,7 @@ export default function DepartmentsPage() {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20" 
+                                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20" 
                                 title="Edit"
                                 onClick={() => handleEdit(dept)}
                               >
@@ -438,7 +444,7 @@ export default function DepartmentsPage() {
                               <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" 
+                                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20" 
                                 title="Delete"
                                 onClick={() => handleDeleteClick(dept)}
                               >
@@ -452,8 +458,11 @@ export default function DepartmentsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      No departments found.
+                    <TableCell colSpan={5} className="h-32 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-500">
+                        <Building2 className="w-10 h-10 mb-2 opacity-20" />
+                        <p>No departments found.</p>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )}
@@ -465,7 +474,7 @@ export default function DepartmentsPage() {
           <div className="md:hidden space-y-4">
             {isLoading || isFetching ? (
               Array(3).fill(0).map((_, i) => (
-                <Card key={i} className="border-slate-200">
+                <Card key={i} className="overflow-hidden border-slate-200 dark:border-slate-800">
                   <CardContent className="p-4 space-y-3">
                     <Skeleton className="h-4 w-1/4" />
                     <Skeleton className="h-6 w-3/4" />
@@ -476,67 +485,89 @@ export default function DepartmentsPage() {
                 </Card>
               ))
             ) : departments.length > 0 ? (
-              departments.map((dept: Department, index: number) => (
-                <Card key={dept.id} className={`border-slate-200 hover:border-primary/30 transition-colors ${(isAllSelectedAcrossPages || selectedIds.includes(dept.id)) ? 'bg-slate-50 border-blue-200' : ''}`}>
+              departments.map((dept: Department) => (
+                <Card 
+                  key={dept.id} 
+                  className={`overflow-hidden transition-all duration-200 border-slate-200 dark:border-slate-800 active:scale-[0.98] ${
+                    (isAllSelectedAcrossPages || selectedIds.includes(dept.id)) 
+                      ? 'ring-2 ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-900/10' 
+                      : 'hover:border-emerald-200 dark:hover:border-emerald-800 shadow-sm'
+                  }`}
+                >
                   <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 border-slate-200 dark:border-slate-800">
+                            Dept
+                          </Badge>
+                          <span className="text-[10px] font-bold text-slate-400">
+                            {dept._count?.schemes || 0} Schemes
+                          </span>
+                        </div>
+                        <h3 className="font-bold text-slate-900 dark:text-white leading-tight">
+                          {dept.name}
+                        </h3>
+                      </div>
+                      {isAdmin && (
                         <Checkbox 
                           checked={isAllSelectedAcrossPages || selectedIds.includes(dept.id)}
                           onCheckedChange={() => handleSelectOne(dept.id)}
-                          className="border-slate-300 dark:border-slate-600 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                          className="mt-1 border-slate-300 dark:border-slate-600"
                         />
-                        <span className="text-xs font-medium text-slate-400">#{(page - 1) * limit + index + 1}</span>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Link href={`/dashboard/departments/${dept.id}`}>
-                          <Button variant="outline" size="sm" className="h-8 px-2">
-                            <Eye className="w-3.5 h-3.5 mr-1" />
-                            View Details
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-4 border-t dark:border-slate-800">
+                      <Link href={`/dashboard/departments/${dept.id}`} className="flex-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full h-9 text-xs font-semibold gap-2 border-slate-200 dark:border-slate-700"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          View
+                        </Button>
+                      </Link>
+                      {isAdmin && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="flex-1 h-9 text-xs font-semibold gap-2 border-slate-200 dark:border-slate-700"
+                            onClick={() => handleEdit(dept)}
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            Edit
                           </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    <h3 className="font-bold text-slate-900 mb-1">{dept.name}</h3>
-                    <div className="flex items-center gap-2 mb-4">
-                      <span className="text-xs text-slate-500">Schemes:</span>
-                      <Badge variant={dept._count?.schemes ? "default" : "outline"} className={dept._count?.schemes ? "bg-blue-100 text-blue-700 h-5 text-[10px]" : "text-gray-400 h-5 text-[10px]"}>
-                        {dept._count?.schemes || 0}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-end border-t pt-3 space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-amber-600 h-8 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                        onClick={() => handleEdit(dept)}
-                      >
-                        <Pencil className="w-3.5 h-3.5 mr-1.5" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-red-600 h-8 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        onClick={() => handleDeleteClick(dept)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                        Delete
-                      </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 border-slate-200 dark:border-slate-700"
+                            onClick={() => handleDeleteClick(dept)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))
             ) : (
-              <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-lg border-2 border-dashed">
-                No departments found.
+              <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800">
+                <Building2 className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No departments found</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto text-sm">
+                  We couldn't find any departments matching your search.
+                </p>
               </div>
             )}
           </div>
 
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-4 border-t gap-4">
-            <div className="text-sm text-gray-500 text-center sm:text-left">
+            <div className="text-sm text-slate-500 text-center sm:text-left">
             Showing <span className="font-medium">{(page - 1) * limit + 1}</span> to{' '}
             <span className="font-medium">
               {Math.min(page * limit, pagination.total)}

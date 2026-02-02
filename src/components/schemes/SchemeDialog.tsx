@@ -111,49 +111,57 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
+      <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh] border-slate-200 dark:border-slate-800">
         <DialogHeader>
-          <DialogTitle>{scheme ? 'Edit Scheme' : 'New Scheme'}</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+            {scheme ? 'Edit Scheme' : 'New Scheme'}
+          </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="scheme_code">Scheme Code</Label>
+              <Label htmlFor="scheme_code" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Scheme Code</Label>
               <Input
                 id="scheme_code"
                 {...register('scheme_code')}
                 placeholder="13-digit code"
                 maxLength={13}
-                className={errors.scheme_code ? 'border-red-500' : ''}
+                className={`h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all font-mono ${
+                  errors.scheme_code ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                }`}
               />
               {errors.scheme_code && (
-                <p className="text-xs text-red-500">{errors.scheme_code.message}</p>
+                <p className="text-xs font-medium text-red-500 mt-1">{errors.scheme_code.message}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="scheme_name">Scheme Name</Label>
+              <Label htmlFor="scheme_name" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Scheme Name</Label>
               <Input
                 id="scheme_name"
                 {...register('scheme_name')}
                 placeholder="Scheme Name"
-                className={errors.scheme_name ? 'border-red-500' : ''}
+                className={`h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all ${
+                  errors.scheme_name ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                }`}
               />
               {errors.scheme_name && (
-                <p className="text-xs text-red-500">{errors.scheme_name.message}</p>
+                <p className="text-xs font-medium text-red-500 mt-1">{errors.scheme_name.message}</p>
               )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="department_id">Department</Label>
+            <Label htmlFor="department_id" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Department</Label>
             <Select
               onValueChange={(value) => setValue('department_id', value)}
               defaultValue={watch('department_id')}
             >
-              <SelectTrigger className={errors.department_id ? 'border-red-500' : ''}>
-                <SelectValue placeholder="All Departments" />
+              <SelectTrigger className={`h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all ${
+                errors.department_id ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+              }`}>
+                <SelectValue placeholder="Select Department" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="border-slate-200 dark:border-slate-800">
                 {departments.map((dept: any) => (
                   <SelectItem key={dept.id} value={dept.id}>
                     {dept.name}
@@ -162,60 +170,73 @@ export function SchemeDialog({ open, onOpenChange, scheme }: SchemeDialogProps) 
               </SelectContent>
             </Select>
             {errors.department_id && (
-              <p className="text-xs text-red-500">{errors.department_id.message}</p>
+              <p className="text-xs font-medium text-red-500 mt-1">{errors.department_id.message}</p>
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label htmlFor="total_budget_provision">Total Budget</Label>
+              <Label htmlFor="total_budget_provision" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Total Budget</Label>
               <Input
                 id="total_budget_provision"
                 type="number"
                 step="0.01"
+                className="h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all"
                 {...register('total_budget_provision', { valueAsNumber: true })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="progressive_allotment">Allotment</Label>
+              <Label htmlFor="progressive_allotment" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Allotment</Label>
               <Input
                 id="progressive_allotment"
                 type="number"
                 step="0.01"
+                className="h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all"
                 {...register('progressive_allotment', { valueAsNumber: true })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="actual_progressive_expenditure">Expenditure</Label>
+              <Label htmlFor="actual_progressive_expenditure" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Expenditure</Label>
               <Input
                 id="actual_progressive_expenditure"
                 type="number"
                 step="0.01"
+                className="h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all font-bold text-emerald-600"
                 {...register('actual_progressive_expenditure', { valueAsNumber: true })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="provisional_expenditure_current_month">Provisional Exp.</Label>
+              <Label htmlFor="provisional_expenditure_current_month" className="text-sm font-semibold text-slate-700 dark:text-slate-300">Provisional Exp.</Label>
               <Input
                 id="provisional_expenditure_current_month"
                 type="number"
                 step="0.01"
+                className="h-11 border-slate-200 dark:border-slate-700 dark:bg-slate-900 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all"
                 {...register('provisional_expenditure_current_month', { valueAsNumber: true })}
               />
             </div>
           </div>
 
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+          <DialogFooter className="gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="w-full sm:w-auto"
+              className="flex-1 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium h-11"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? 'Saving...' : 'Save'}
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-sm h-11"
+            >
+              {isLoading ? (
+                <span className="flex items-center">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Saving...
+                </span>
+              ) : 'Save Scheme'}
             </Button>
           </DialogFooter>
         </form>

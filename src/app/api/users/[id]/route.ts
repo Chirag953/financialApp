@@ -84,10 +84,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (userToDelete.role !== 'VIEWER') {
-      return NextResponse.json({ error: 'Only viewers can be deleted' }, { status: 403 });
-    }
-
     await prisma.user.delete({ where: { id } });
 
     // Log the action

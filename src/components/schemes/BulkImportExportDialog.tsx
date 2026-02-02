@@ -17,9 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useImportSchemesMutation, useGetDepartmentsQuery } from '@/store/services/api';
+import { useImportSchemesMutation, useGetDepartmentsQuery, useGetSettingsQuery } from '@/store/services/api';
 import { toast } from 'sonner';
-import { Download, Upload, FileDown, Loader2, AlertCircle, CheckCircle2, Building2 } from 'lucide-react';
+import { Download, Upload, FileDown, Loader2, AlertCircle, CheckCircle2, Building2, Calendar } from 'lucide-react';
 import Link from 'next/link';
 
 interface BulkImportExportDialogProps {
@@ -30,7 +30,9 @@ interface BulkImportExportDialogProps {
 export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportDialogProps) {
   const [importSchemes, { isLoading: isImporting }] = useImportSchemesMutation();
   const { data: deptsData } = useGetDepartmentsQuery({ limit: 100 });
+  const { data: settingsData } = useGetSettingsQuery();
   const departments = deptsData?.departments || [];
+  const currentFinancialYear = settingsData?.settings?.financial_year || '';
 
   const [mode, setMode] = useState<'options' | 'import' | 'summary'>('options');
   const [selectedDeptId, setSelectedDeptId] = useState<string>('');
@@ -81,6 +83,9 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
     formData.append('file', selectedFile);
     if (selectedDeptId) {
       formData.append('deptId', selectedDeptId);
+    }
+    if (currentFinancialYear) {
+      formData.append('financialYear', currentFinancialYear);
     }
 
     try {
@@ -154,6 +159,11 @@ export function BulkImportExportDialog({ open, onOpenChange }: BulkImportExportD
             ) : (
               <>
                 <div className="space-y-4">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/30 rounded-lg text-amber-900 dark:text-amber-100">
+                    <Calendar className="w-4 h-4 text-amber-600" />
+                    <span className="text-sm font-medium">Target Financial Year: <span className="font-bold">{currentFinancialYear || 'Not Set'}</span></span>
+                  </div>
+
                   <div className="space-y-2">
                     <Label className="text-sm font-semibold">Select Department for New Schemes</Label>
                     <Select value={selectedDeptId} onValueChange={setSelectedDeptId}>

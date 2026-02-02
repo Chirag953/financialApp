@@ -101,7 +101,7 @@ export async function DELETE(request: Request) {
       const result = await prisma.user.deleteMany({
         where: {
           role: 'VIEWER',
-          id: { not: session.id } // Just in case an admin has role viewer (though unlikely)
+          id: { not: session.id }
         }
       });
 
@@ -118,10 +118,32 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ success: true, count: result.count });
     }
 
+    const ids = searchParams.get('ids')?.split(',');
+    if (ids && ids.length > 0) {
+      // Allow deleting any users except the current session user
+      const result = await prisma.user.deleteMany({
+        where: {
+          id: { in: ids, not: session.id }
+        }
+      });
+
+      // Log the action
+      await prisma.auditLog.create({
+        data: {
+          userId: session.id,
+          action: 'BULK_DELETE_USERS',
+          module: 'USER_MGMT',
+          details: { count: result.count, requestedIds: ids.length },
+        },
+      });
+
+      return NextResponse.json({ success: true, count: result.count });
+    }
+
     return NextResponse.json({ error: 'Invalid delete mode' }, { status: 400 });
   } catch (error) {
     console.error('Bulk user deletion error:', error);
-    return NextResponse.json({ error: 'Failed to delete viewers' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete users' }, { status: 500 });
   }
 }
 

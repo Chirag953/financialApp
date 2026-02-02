@@ -130,7 +130,7 @@ export function UserDialog({ open, onOpenChange, editingUser }: UserDialogProps)
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">
-              Password {editingUser && <span className="text-xs font-normal text-gray-400">(Leave blank to keep current password)</span>}
+              Password {editingUser && <span className="text-xs font-normal text-slate-400">(Leave blank to keep current password)</span>}
             </Label>
             <Input
               id="password"

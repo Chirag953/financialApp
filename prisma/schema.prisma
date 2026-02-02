@@ -29,6 +29,7 @@ model Scheme {
   id                                    String     @id @default(uuid())
   scheme_code                           String     @unique @db.VarChar(13)
   scheme_name                           String
+  financial_year                        String?    @default("2024-25")
   total_budget_provision                Decimal    @db.Decimal(15, 2)
   progressive_allotment                 Decimal    @db.Decimal(15, 2)
   actual_progressive_expenditure        Decimal    @db.Decimal(15, 2)
@@ -75,7 +76,7 @@ model AuditLog {
   details   Json
   timestamp DateTime @default(now())
   module    String?
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Setting {
